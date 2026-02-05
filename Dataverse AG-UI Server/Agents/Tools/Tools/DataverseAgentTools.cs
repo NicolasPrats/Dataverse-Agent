@@ -1,4 +1,4 @@
-﻿using Microsoft.Crm.Sdk.Messages;
+using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Extensions.AI;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk;
@@ -32,6 +32,7 @@ namespace TestAgentFramework.Agents.Tools.Tools
         private const string PublisherPrefix = "agent";
 
         private readonly ServiceClient _serviceClient;
+        private readonly int _baseLcid;
         private Guid? _solutionId;
 
         public DataverseAgentTools(DataverseSettings configuration)
@@ -41,6 +42,36 @@ namespace TestAgentFramework.Agents.Tools.Tools
             if (!_serviceClient.IsReady)
             {
                 throw new InvalidOperationException($"Failed to connect to Dataverse: {_serviceClient.LastError}");
+            }
+
+            // Retrieve the base language LCID from the organization
+            _baseLcid = RetrieveBaseLcid();
+        }
+
+        private int RetrieveBaseLcid()
+        {
+            try
+            {
+                var query = new QueryExpression("organization")
+                {
+                    ColumnSet = new ColumnSet("languagecode"),
+                    TopCount = 1
+                };
+
+                var results = _serviceClient.RetrieveMultiple(query);
+                
+                if (results.Entities.Count > 0 && results.Entities[0].Contains("languagecode"))
+                {
+                    return results.Entities[0].GetAttributeValue<int>("languagecode");
+                }
+                
+                // Fallback to English (US) if unable to retrieve
+                return 1033;
+            }
+            catch
+            {
+                // Fallback to English (US) in case of any error
+                return 1033;
             }
         }
 
@@ -355,11 +386,11 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         {
                             SchemaName = schemaName,
                             LogicalName = logicalName,
-                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, 1033),
-                            DisplayCollectionName = new Microsoft.Xrm.Sdk.Label(displayName + "s", 1033),
+                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
+                            DisplayCollectionName = new Microsoft.Xrm.Sdk.Label(displayName + "s", _baseLcid),
                             Description = string.IsNullOrWhiteSpace(description) 
                                 ? null 
-                                : new Microsoft.Xrm.Sdk.Label(description, 1033),
+                                : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
                             OwnershipType = OwnershipTypes.UserOwned,
                             IsActivity = false,
                             HasActivities = true,
@@ -372,8 +403,8 @@ namespace TestAgentFramework.Agents.Tools.Tools
                             RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
                                 Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.None),
                             MaxLength = 100,
-                            DisplayName = new Microsoft.Xrm.Sdk.Label("Name", 1033),
-                            Description = new Microsoft.Xrm.Sdk.Label("The primary name attribute", 1033)
+                            DisplayName = new Microsoft.Xrm.Sdk.Label("Name", _baseLcid),
+                            Description = new Microsoft.Xrm.Sdk.Label("The primary name attribute", _baseLcid)
                         },
                         SolutionUniqueName = SolutionUniqueName
                     };
@@ -409,16 +440,17 @@ namespace TestAgentFramework.Agents.Tools.Tools
             });
         }
 
-        [Description("Creates a new attribute (column) in a table. Supported types: string, integer, decimal, boolean, datetime, money.")]
+        [Description("Creates a new attribute (column) in a table. Supported types: string, integer, decimal, boolean, datetime, money, picklist.")]
         public async Task<object> CreateAttributeAsync(
             [Description("The logical name of the table")] string entityLogicalName,
             [Description("The logical name of the attribute (lowercase with underscores)")] string attributeLogicalName,
             [Description("The schema name of the attribute")] string attributeSchemaName,
-            [Description("Type of attribute: 'string', 'integer', 'decimal', 'boolean', 'datetime', or 'money'")] string attributeType,
+            [Description("Type of attribute: 'string', 'integer', 'decimal', 'boolean', 'datetime', 'money', or 'picklist'")] string attributeType,
             [Description("The display name of the attribute")] string displayName,
             [Description("Optional description")] string? description = null,
             [Description("Whether the attribute is required")] bool isRequired = false,
-            [Description("Maximum length (for string attributes only)")] int? maxLength = null)
+            [Description("Maximum length (for string attributes only)")] int? maxLength = null,
+            [Description("The logical name of the global option set (required for 'picklist' type)")] string? globalOptionSetName = null)
         {
             return await Task.Run<object>(() =>
             {
@@ -430,10 +462,10 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         {
                             SchemaName = attributeSchemaName,
                             LogicalName = attributeLogicalName,
-                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, 1033),
+                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
                             Description = string.IsNullOrWhiteSpace(description) 
                                 ? null 
-                                : new Microsoft.Xrm.Sdk.Label(description, 1033),
+                                : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
                             RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
                                 isRequired 
                                     ? Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.ApplicationRequired 
@@ -444,10 +476,10 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         {
                             SchemaName = attributeSchemaName,
                             LogicalName = attributeLogicalName,
-                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, 1033),
+                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
                             Description = string.IsNullOrWhiteSpace(description) 
                                 ? null 
-                                : new Microsoft.Xrm.Sdk.Label(description, 1033),
+                                : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
                             RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
                                 isRequired 
                                     ? Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.ApplicationRequired 
@@ -458,10 +490,10 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         {
                             SchemaName = attributeSchemaName,
                             LogicalName = attributeLogicalName,
-                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, 1033),
+                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
                             Description = string.IsNullOrWhiteSpace(description) 
                                 ? null 
-                                : new Microsoft.Xrm.Sdk.Label(description, 1033),
+                                : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
                             RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
                                 isRequired 
                                     ? Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.ApplicationRequired 
@@ -472,26 +504,26 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         {
                             SchemaName = attributeSchemaName,
                             LogicalName = attributeLogicalName,
-                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, 1033),
+                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
                             Description = string.IsNullOrWhiteSpace(description) 
                                 ? null 
-                                : new Microsoft.Xrm.Sdk.Label(description, 1033),
+                                : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
                             RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
                                 isRequired 
                                     ? Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.ApplicationRequired 
                                     : Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.None),
                             OptionSet = new BooleanOptionSetMetadata(
-                                new Microsoft.Xrm.Sdk.Metadata.OptionMetadata(new Microsoft.Xrm.Sdk.Label("Yes", 1033), 1),
-                                new Microsoft.Xrm.Sdk.Metadata.OptionMetadata(new Microsoft.Xrm.Sdk.Label("No", 1033), 0))
+                                new Microsoft.Xrm.Sdk.Metadata.OptionMetadata(new Microsoft.Xrm.Sdk.Label("Yes", _baseLcid), 1),
+                                new Microsoft.Xrm.Sdk.Metadata.OptionMetadata(new Microsoft.Xrm.Sdk.Label("No", _baseLcid), 0))
                         },
                         "datetime" => new DateTimeAttributeMetadata
                         {
                             SchemaName = attributeSchemaName,
                             LogicalName = attributeLogicalName,
-                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, 1033),
+                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
                             Description = string.IsNullOrWhiteSpace(description) 
                                 ? null 
-                                : new Microsoft.Xrm.Sdk.Label(description, 1033),
+                                : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
                             RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
                                 isRequired 
                                     ? Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.ApplicationRequired 
@@ -502,10 +534,10 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         {
                             SchemaName = attributeSchemaName,
                             LogicalName = attributeLogicalName,
-                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, 1033),
+                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
                             Description = string.IsNullOrWhiteSpace(description) 
                                 ? null 
-                                : new Microsoft.Xrm.Sdk.Label(description, 1033),
+                                : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
                             RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
                                 isRequired 
                                     ? Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.ApplicationRequired 
@@ -513,6 +545,27 @@ namespace TestAgentFramework.Agents.Tools.Tools
                             Precision = 2,
                             PrecisionSource = 2
                         },
+                        "picklist" or "optionset" => string.IsNullOrWhiteSpace(globalOptionSetName)
+                            ? throw new ArgumentException("globalOptionSetName is required when creating a picklist attribute")
+                            : new PicklistAttributeMetadata
+                            {
+                                SchemaName = attributeSchemaName,
+                                LogicalName = attributeLogicalName,
+                                DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
+                                Description = string.IsNullOrWhiteSpace(description) 
+                                    ? null 
+                                    : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
+                                RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
+                                    isRequired 
+                                        ? Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.ApplicationRequired 
+                                        : Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.None),
+                                OptionSet = new OptionSetMetadata
+                                {
+                                    IsGlobal = true,
+                                    OptionSetType = OptionSetType.Picklist,
+                                    Name = globalOptionSetName
+                                }
+                            },
                         _ => throw new ArgumentException($"Unsupported attribute type: {attributeType}")
                     };
 
@@ -549,7 +602,8 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         EntityLogicalName = entityLogicalName,
                         AttributeLogicalName = attributeLogicalName,
                         AttributeType = attributeType,
-                        DisplayName = displayName
+                        DisplayName = displayName,
+                        GlobalOptionSetName = globalOptionSetName
                     };
                 }
             });
@@ -575,10 +629,10 @@ namespace TestAgentFramework.Agents.Tools.Tools
                     var optionSetMetadata = new OptionSetMetadata
                     {
                         Name = optionSetName,
-                        DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, 1033),
+                        DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
                         Description = string.IsNullOrWhiteSpace(description) 
                             ? null 
-                            : new Microsoft.Xrm.Sdk.Label(description, 1033),
+                            : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
                         IsGlobal = true,
                         OptionSetType = OptionSetType.Picklist,
                         Options = { }
@@ -587,7 +641,7 @@ namespace TestAgentFramework.Agents.Tools.Tools
                     foreach (var option in options)
                     {
                         optionSetMetadata.Options.Add(new Microsoft.Xrm.Sdk.Metadata.OptionMetadata(
-                            new Microsoft.Xrm.Sdk.Label(option.Key, 1033),
+                            new Microsoft.Xrm.Sdk.Label(option.Key, _baseLcid),
                             option.Value));
                     }
 
@@ -651,7 +705,7 @@ namespace TestAgentFramework.Agents.Tools.Tools
                                 var insertRequest = new InsertOptionValueRequest
                                 {
                                     OptionSetName = optionSetName,
-                                    Label = new Microsoft.Xrm.Sdk.Label(option.Key, 1033),
+                                    Label = new Microsoft.Xrm.Sdk.Label(option.Key, _baseLcid),
                                     Value = option.Value
                                 };
                                 _serviceClient.Execute(insertRequest);
@@ -688,7 +742,7 @@ namespace TestAgentFramework.Agents.Tools.Tools
                                 {
                                     OptionSetName = optionSetName,
                                     Value = int.Parse(option.Key),
-                                    Label = new Microsoft.Xrm.Sdk.Label(option.Value, 1033)
+                                    Label = new Microsoft.Xrm.Sdk.Label(option.Value, _baseLcid)
                                 };
                                 _serviceClient.Execute(updateRequest);
                                 messages.Add($"Updated option {option.Key} to '{option.Value}'");
@@ -735,10 +789,10 @@ namespace TestAgentFramework.Agents.Tools.Tools
                     {
                         SchemaName = lookupAttributeSchemaName,
                         LogicalName = lookupAttributeLogicalName,
-                        DisplayName = new Microsoft.Xrm.Sdk.Label(lookupDisplayName, 1033),
+                        DisplayName = new Microsoft.Xrm.Sdk.Label(lookupDisplayName, _baseLcid),
                         Description = string.IsNullOrWhiteSpace(description) 
                             ? null 
-                            : new Microsoft.Xrm.Sdk.Label(description, 1033),
+                            : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
                         RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
                             Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.None)
                     };
@@ -752,7 +806,7 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         {
                             Behavior = AssociatedMenuBehavior.UseCollectionName,
                             Group = AssociatedMenuGroup.Details,
-                            Label = new Microsoft.Xrm.Sdk.Label(lookupDisplayName, 1033),
+                            Label = new Microsoft.Xrm.Sdk.Label(lookupDisplayName, _baseLcid),
                             Order = 10000
                         },
                         CascadeConfiguration = new CascadeConfiguration
@@ -829,14 +883,14 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         {
                             Behavior = AssociatedMenuBehavior.UseLabel,
                             Group = AssociatedMenuGroup.Details,
-                            Label = new Microsoft.Xrm.Sdk.Label($"Related {entity2LogicalName}", 1033),
+                            Label = new Microsoft.Xrm.Sdk.Label($"Related {entity2LogicalName}", _baseLcid),
                             Order = 10000
                         },
                         Entity2AssociatedMenuConfiguration = new AssociatedMenuConfiguration
                         {
                             Behavior = AssociatedMenuBehavior.UseLabel,
                             Group = AssociatedMenuGroup.Details,
-                            Label = new Microsoft.Xrm.Sdk.Label($"Related {entity1LogicalName}", 1033),
+                            Label = new Microsoft.Xrm.Sdk.Label($"Related {entity1LogicalName}", _baseLcid),
                             Order = 10000
                         }
                     };
@@ -975,3 +1029,4 @@ namespace TestAgentFramework.Agents.Tools.Tools
 
     }
 }
+

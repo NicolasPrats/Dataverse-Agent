@@ -21,6 +21,7 @@ export default function Page() {
             },
         ],
         render: ({ args, respond }) => {
+            console.log("Human-in-the-loop invoked with args:", args, respond);
             if (!respond) return <></>;
             return (
                 <div>

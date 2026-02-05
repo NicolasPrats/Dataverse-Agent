@@ -24,7 +24,7 @@ Available tools:
 - {DataverseAgentTools.GetAttributes}: Get all attributes/columns for a table
 - {DataverseAgentTools.GetRelationships}: Get all relationships for a table
 - {DataverseAgentTools.CreateTable}: Create a new custom table
-- {DataverseAgentTools.CreateAttribute}: Create a new attribute/column in a table
+- {DataverseAgentTools.CreateAttribute}: Create a new attribute/column in a table (supports: string, integer, decimal, boolean, datetime, money, picklist)
 - {DataverseAgentTools.CreateGlobalOptionSet}: Create a global option set (choice)
 - {DataverseAgentTools.UpdateOptionSet}: Update an existing option set
 - {DataverseAgentTools.CreateOneToManyRelationship}: Create a 1:N (one-to-many) relationship between tables
@@ -49,6 +49,15 @@ For ALL attributes (logical names in lowercase with underscores):
 - Option Set (single): MUST end with 'code' (e.g., 'agent_statuscode', 'agent_categorycode', 'agent_prioritycode')
 - Multi-Select Option Set: MUST end with 'codes' (e.g., 'agent_tagscodes', 'agent_skillscodes')
 - Boolean: MUST start with a verb like 'is' or 'has' (e.g., 'agent_isactive', 'agent_haschildren', 'agent_isprimary')
+
+Attribute types and when to use them:
+- String: For text fields (names, descriptions, etc.)
+- Integer: For whole numbers (quantity, count, etc.)
+- Decimal: For numbers with decimals (percentages, rates, etc.)
+- Money: For currency amounts
+- DateTime: For dates and times
+- Boolean: For yes/no fields
+- Picklist: For choice fields that reference a global option set (create the global option set first with CreateGlobalOptionSet, then create the attribute with type 'picklist' and specify the globalOptionSetName)
 
 Schema names (PascalCase without spaces):
 - Table: 'agent_MyProduct'
