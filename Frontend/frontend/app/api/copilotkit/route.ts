@@ -14,8 +14,10 @@ const serviceAdapter = new ExperimentalEmptyAdapter();
 // 2. Create the CopilotRuntime instance and utilize the Microsoft Agent Framework
 //    AG-UI integration to setup the connection.
 const runtime = new CopilotRuntime({
-  agents: {
-    my_agent: new HttpAgent({ url: "http://localhost:5080/" }),
+    agents: {
+        default: new HttpAgent({ url: "http://localhost:5080/" }),
+        architect: new HttpAgent({ url: "http://localhost:5080/architect" }),
+        datamodel: new HttpAgent({ url: "http://localhost:5080/datamodel" }),
   },
 });
 

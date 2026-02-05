@@ -19,6 +19,16 @@ public class AgentFactory(AppConfiguration config, IChatClientFactory chatClient
         return agent;
     }
 
+    public ArchitectAgent CreateArchitectAgent()
+    {
+        // Create the DataModelBuilderAgent first so the ArchitectAgent can call it
+        var dataModelBuilderAgent = CreateDataModelBuilderAgent();
+        
+        var agent = new ArchitectAgent(dataModelBuilderAgent);
+        agent.Initialize(_chatClientFactory.CreateChatClient());
+        return agent;
+    }
+
 }
 
 

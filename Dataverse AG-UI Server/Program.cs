@@ -40,8 +40,11 @@ namespace Dataverse_AG_UI_Server
             var orchestrator = new AgentOrchestrator();
 
             var dataModelAgent = agentFactory.CreateDataModelBuilderAgent();
+            var architectAgent = agentFactory.CreateArchitectAgent();
 
-            app.MapAGUI("/", dataModelAgent.InternalAgent);
+            app.MapAGUI("/", architectAgent.InternalAgent);
+            app.MapAGUI("/architect", architectAgent.InternalAgent);
+            app.MapAGUI("/datamodel", dataModelAgent.InternalAgent);
             app.Run();
         }
     }
