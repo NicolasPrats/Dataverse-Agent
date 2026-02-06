@@ -43,7 +43,7 @@ const [isPanelOpen, setIsPanelOpen] = useState(false);
                         {isPanelOpen ? "Hide" : "Show"} Diagnostics
                     </Button>
                 </div>
-                <div style={{ flex: "1", overflow: "hidden" }}>
+                <div style={{ flex: "1", overflow: "auto", minHeight: 0 }}>
                     <div
                         style={{
                             height: "100%",
@@ -52,6 +52,9 @@ const [isPanelOpen, setIsPanelOpen] = useState(false);
                             border: "1px solid #2A476C",
                             padding: "8px",
                             boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
+                            display: "flex",
+                            flexDirection: "column",
+                            overflow: "auto",
                         }}
                     >
                         <CopilotChat
@@ -74,18 +77,25 @@ const [isPanelOpen, setIsPanelOpen] = useState(false);
                 <div
                     style={{
                         padding: "16px",
-                        height: "100%",
+                        flex: 1,
                         background: "#0F1419",
+                        display: "flex",
+                        flexDirection: "column",
+                        minHeight: 0,
                     }}
                 >
                     <div
                         style={{
-                            height: "100%",
+                            flex: 1,
                             background: "#16212D",
                             borderRadius: "8px",
                             border: "1px solid #2A476C",
                             padding: "16px",
                             boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
+                            display: "flex",
+                            flexDirection: "column",
+                            minHeight: 0,
+                            overflow: "hidden",
                         }}
                     >
                         <DiagnosticLogs />

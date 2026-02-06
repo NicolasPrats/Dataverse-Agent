@@ -72,6 +72,7 @@ export default function ResizablePanel({
                     display: "flex",
                     flexDirection: "column",
                     overflow: "hidden",
+                    minHeight: 0,
                 }}
             >
                 {children}

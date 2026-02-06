@@ -98,8 +98,8 @@ export default function DiagnosticLogs() {
     };
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: "16px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, gap: "16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
                 <Text size={500} weight="semibold">
                     Diagnostic Logs
                 </Text>
@@ -116,83 +116,54 @@ export default function DiagnosticLogs() {
                 style={{
                     flex: 1,
                     overflow: "auto",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "12px",
+                    minHeight: 0,
                 }}
             >
-                {events.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "32px" }}>
-                        <Caption1>Waiting for logs...</Caption1>
-                    </div>
-                ) : (
-                    events.map((event, index) => (
-                        <Card key={index} style={{ padding: "12px" }}>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "8px",
-                                        flexWrap: "wrap",
-                                    }}
-                                >
-                                    <Caption1 style={{ color: "#9AA0A6" }}>
-                                        {formatTimestamp(event.Timestamp)}
-                                    </Caption1>
-                                    <Badge appearance="filled" color="informative">
-                                        {event.SourceAgent}
-                                    </Badge>
-                                    <Text style={{ color: "#9AA0A6" }}>→</Text>
-                                    <Badge appearance="filled" color="brand">
-                                        {event.Target}
-                                    </Badge>
-                                    {event.Duration && (
-                                        <Badge appearance="tint" color="success">
-                                            {formatDuration(event.Duration)}
-                                        </Badge>
-                                    )}
-                                </div>
-
-                                {event.Payload ? (
-                                    <div style={{ marginTop: "8px" }}>
-                                        <Caption1 style={{ color: "#9AA0A6", fontWeight: 600 }}>
-                                            Payload:
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "12px",
+                    }}
+                >
+                    {events.length === 0 ? (
+                        <div style={{ textAlign: "center", padding: "32px" }}>
+                            <Caption1>Waiting for logs...</Caption1>
+                        </div>
+                    ) : (
+                        events.map((event, index) => (
+                            <Card key={index} style={{ padding: "12px" }}>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "8px",
+                                            flexWrap: "wrap",
+                                        }}
+                                    >
+                                        <Caption1 style={{ color: "#9AA0A6" }}>
+                                            {formatTimestamp(event.Timestamp)}
                                         </Caption1>
-                                        <pre
-                                            style={{
-                                                background: "#1B2A3D",
-                                                padding: "8px",
-                                                borderRadius: "4px",
-                                                fontSize: "12px",
-                                                overflow: "auto",
-                                                margin: "4px 0 0 0",
-                                                border: "1px solid #2A476C",
-                                                color: "#E8EAED",
-                                            }}
-                                        >
-                                            {JSON.stringify(event.Payload, null, 2)}
-                                        </pre>
+                                        <Badge appearance="filled" color="informative">
+                                            {event.SourceAgent}
+                                        </Badge>
+                                        <Text style={{ color: "#9AA0A6" }}>→</Text>
+                                        <Badge appearance="filled" color="brand">
+                                            {event.Target}
+                                        </Badge>
+                                        {event.Duration && (
+                                            <Badge appearance="tint" color="success">
+                                                {formatDuration(event.Duration)}
+                                            </Badge>
+                                        )}
                                     </div>
-                                ) : null}
 
-                                {event.Result ? (
-                                    <div style={{ marginTop: "8px" }}>
-                                        <Button
-                                            appearance="subtle"
-                                            size="small"
-                                            icon={
-                                                expandedResults.has(index) ? (
-                                                    <ChevronDownRegular />
-                                                ) : (
-                                                    <ChevronRightRegular />
-                                                )
-                                            }
-                                            onClick={() => toggleResult(index)}
-                                        >
-                                            Result
-                                        </Button>
-                                        {expandedResults.has(index) ? (
+                                    {event.Payload ? (
+                                        <div style={{ marginTop: "8px" }}>
+                                            <Caption1 style={{ color: "#9AA0A6", fontWeight: 600 }}>
+                                                Payload:
+                                            </Caption1>
                                             <pre
                                                 style={{
                                                     background: "#1B2A3D",
@@ -205,15 +176,50 @@ export default function DiagnosticLogs() {
                                                     color: "#E8EAED",
                                                 }}
                                             >
-                                                {JSON.stringify(event.Result, null, 2)}
+                                                {JSON.stringify(event.Payload, null, 2)}
                                             </pre>
-                                        ) : null}
-                                    </div>
-                                ) : null}
-                            </div>
-                        </Card>
-                    ))
-                )}
+                                        </div>
+                                    ) : null}
+
+                                    {event.Result ? (
+                                        <div style={{ marginTop: "8px" }}>
+                                            <Button
+                                                appearance="subtle"
+                                                size="small"
+                                                icon={
+                                                    expandedResults.has(index) ? (
+                                                        <ChevronDownRegular />
+                                                    ) : (
+                                                        <ChevronRightRegular />
+                                                    )
+                                                }
+                                                onClick={() => toggleResult(index)}
+                                            >
+                                                Result
+                                            </Button>
+                                            {expandedResults.has(index) ? (
+                                                <pre
+                                                    style={{
+                                                        background: "#1B2A3D",
+                                                        padding: "8px",
+                                                        borderRadius: "4px",
+                                                        fontSize: "12px",
+                                                        overflow: "auto",
+                                                        margin: "4px 0 0 0",
+                                                        border: "1px solid #2A476C",
+                                                        color: "#E8EAED",
+                                                    }}
+                                                >
+                                                    {JSON.stringify(event.Result, null, 2)}
+                                                </pre>
+                                            ) : null}
+                                        </div>
+                                    ) : null}
+                                </div>
+                            </Card>
+                        ))
+                    )}
+                </div>
             </div>
         </div>
     );
