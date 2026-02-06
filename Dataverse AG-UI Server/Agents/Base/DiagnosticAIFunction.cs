@@ -5,18 +5,19 @@ using System.Text.Json;
 
 namespace Dataverse_AG_UI_Server.Agents.Base;
 
-public class DiagnosticAIFunction(AIFunction innerFunction, string agentName, string target, IDiagnosticBus diagBus) : AIFunction
+public class DiagnosticAIFunction(AIFunction innerFunction, string agentName, string target, IDiagnosticBus diagBus, TargetType targetType) : AIFunction
 {
     private readonly AIFunction _innerFunction = innerFunction;
     private readonly string _agentName = agentName;
     private readonly string _target = target;
     private readonly IDiagnosticBus _diagBus = diagBus;
+    private readonly TargetType _targetType = targetType;
 
     public override IReadOnlyDictionary<string, object?> AdditionalProperties
     {
         get
         {
-            return _innerFunction.AdditionalProperties;
+            return InnerFunction.AdditionalProperties;
         }
     }
 
@@ -26,15 +27,20 @@ public class DiagnosticAIFunction(AIFunction innerFunction, string agentName, st
     public override JsonElement? ReturnJsonSchema => innerFunction.ReturnJsonSchema;
     public override JsonSerializerOptions JsonSerializerOptions => innerFunction.JsonSerializerOptions;
 
+    public AIFunction InnerFunction => _innerFunction;
+
     protected override async ValueTask<object?> InvokeCoreAsync(
         AIFunctionArguments? arguments,
         CancellationToken cancellationToken)
     {
+        var id= Guid.NewGuid(); 
         var startEvent = new AgentDiagnosticEvent
         {
+            EventId = id,
             SourceAgent = _agentName,
             Target = _target,
-            Payload = new { Phase = "Start", Arguments = arguments }
+            TargetType = _targetType,
+            Payload = new { Status = "Calling", Arguments = arguments }
         };
         
         _diagBus.Publish(startEvent);
@@ -42,14 +48,16 @@ public class DiagnosticAIFunction(AIFunction innerFunction, string agentName, st
         
         try
         {
-            var result = await _innerFunction.InvokeAsync(arguments, cancellationToken);
+            var result = await InnerFunction.InvokeAsync(arguments, cancellationToken);
             
             var duration = DateTime.UtcNow - startTime;
             var completeEvent = new AgentDiagnosticEvent
             {
+                EventId = id,
                 SourceAgent = _agentName,
                 Target = _target,
-                Payload = new { Phase = "Complete" },
+                TargetType = _targetType,
+                Payload = new { Status = "Called successfully.", Arguments = arguments },
                 Result = result,
                 Duration = duration
             };
@@ -62,10 +70,12 @@ public class DiagnosticAIFunction(AIFunction innerFunction, string agentName, st
             var duration = DateTime.UtcNow - startTime;
             var errorEvent = new AgentDiagnosticEvent
             {
+                EventId = id,
                 SourceAgent = _agentName,
                 Target = _target,
-                Payload = new { Phase = "Error", Error = ex.Message },
-                Duration = duration
+                TargetType = _targetType,
+                Payload = new { Status = "Called failed.", Arguments = arguments },
+                Result = ex,                
             };
             _diagBus.Publish(errorEvent);
             throw;

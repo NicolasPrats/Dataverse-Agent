@@ -16,19 +16,26 @@ import {
     CircleFilled,
 } from "@fluentui/react-icons";
 
+enum TargetType {
+    Tool = "Tool",
+    Agent = "Agent"
+}
+
 interface AgentDiagnosticEvent {
     Timestamp: string;
     SourceAgent: string;
     Target: string;
+    TargetType: TargetType;
     Payload?: unknown;
     Result?: unknown;
     Duration?: string | number;
+    EventId: string;
 }
 
 export default function DiagnosticLogs() {
-    const [events, setEvents] = useState<AgentDiagnosticEvent[]>([]);
-    const [isConnected, setIsConnected] = useState(false);
-    const [expandedResults, setExpandedResults] = useState<Set<number>>(new Set());
+const [events, setEvents] = useState<AgentDiagnosticEvent[]>([]);
+const [isConnected, setIsConnected] = useState(false);
+const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         const eventSource = new EventSource("/api/diagnostics");
@@ -40,7 +47,16 @@ export default function DiagnosticLogs() {
         eventSource.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data) as AgentDiagnosticEvent;
-                setEvents((prev) => [...prev, data].slice(-100));
+                setEvents((prev) => {
+                    const existingIndex = prev.findIndex(e => e.EventId === data.EventId);
+                    if (existingIndex !== -1) {
+                        const newEvents = [...prev];
+                        newEvents[existingIndex] = data;
+                        return newEvents.slice(-100);
+                    } else {
+                        return [...prev, data].slice(-100);
+                    }
+                });
             } catch (error) {
                 console.error("Failed to parse diagnostic event:", error);
             }
@@ -87,12 +103,12 @@ export default function DiagnosticLogs() {
         return new Date(timestamp).toLocaleTimeString();
     };
 
-    const toggleResult = (index: number) => {
+    const toggleResult = (eventId: string) => {
         const newExpanded = new Set(expandedResults);
-        if (newExpanded.has(index)) {
-            newExpanded.delete(index);
+        if (newExpanded.has(eventId)) {
+            newExpanded.delete(eventId);
         } else {
-            newExpanded.add(index);
+            newExpanded.add(eventId);
         }
         setExpandedResults(newExpanded);
     };
@@ -132,7 +148,7 @@ export default function DiagnosticLogs() {
                         </div>
                     ) : (
                         events.map((event, index) => (
-                            <Card key={index} style={{ padding: "12px" }}>
+                            <Card key={event.EventId || index} style={{ padding: "12px" }}>
                                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                     <div
                                         style={{
@@ -149,11 +165,20 @@ export default function DiagnosticLogs() {
                                             {event.SourceAgent}
                                         </Badge>
                                         <Text style={{ color: "#9AA0A6" }}>→</Text>
-                                        <Badge appearance="filled" color="brand">
+                                        <Badge 
+                                            appearance="filled" 
+                                            color={event.TargetType === TargetType.Tool ? "success" : "brand"}
+                                        >
                                             {event.Target}
                                         </Badge>
+                                        <Badge 
+                                            appearance="tint" 
+                                            color={event.TargetType === TargetType.Tool ? "success" : "brand"}
+                                        >
+                                            {event.TargetType}
+                                        </Badge>
                                         {event.Duration && (
-                                            <Badge appearance="tint" color="success">
+                                            <Badge appearance="tint" color="warning">
                                                 {formatDuration(event.Duration)}
                                             </Badge>
                                         )}
@@ -187,17 +212,17 @@ export default function DiagnosticLogs() {
                                                 appearance="subtle"
                                                 size="small"
                                                 icon={
-                                                    expandedResults.has(index) ? (
+                                                    expandedResults.has(event.EventId) ? (
                                                         <ChevronDownRegular />
                                                     ) : (
                                                         <ChevronRightRegular />
                                                     )
                                                 }
-                                                onClick={() => toggleResult(index)}
+                                                onClick={() => toggleResult(event.EventId)}
                                             >
                                                 Result
                                             </Button>
-                                            {expandedResults.has(index) ? (
+                                            {expandedResults.has(event.EventId) ? (
                                                 <pre
                                                     style={{
                                                         background: "#1B2A3D",

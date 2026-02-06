@@ -1,6 +1,7 @@
 "use client";
 
 import { Message } from "@copilotkit/runtime-client-gql";
+import { Markdown } from "@copilotkit/react-ui";
 
 interface MessageProps {
     message: Message;
@@ -15,6 +16,11 @@ export function CustomAssistantMessage({ message, inProgress = false }: MessageP
         hour: "2-digit",
         minute: "2-digit",
     });
+
+    const isEmpty = !message.content || message.content.trim().length === 0;
+    if (isEmpty && !inProgress) {
+        return null;
+    }
 
     return (
         <div
@@ -75,12 +81,16 @@ export function CustomAssistantMessage({ message, inProgress = false }: MessageP
                         borderRadius: "8px",
                         border: "1px solid #4F8AD4",
                         color: "#E8EAED",
-                        lineHeight: "1.5",
+                        lineHeight: "1.2",
                         wordWrap: "break-word",
                         opacity: inProgress ? 0.7 : 1,
                     }}
                 >
-                    {message.content}
+                    {isEmpty && inProgress ? (
+                        <span style={{ color: "#9AA0A6", fontStyle: "italic" }}>Thinking...</span>
+                    ) : (
+                        <Markdown content={message.content} />
+                    )}
                 </div>
             </div>
         </div>
@@ -95,6 +105,10 @@ export function CustomUserMessage({ message }: MessageProps) {
         hour: "2-digit",
         minute: "2-digit",
     });
+
+    if (!message.content?.trim()) {
+        return null;
+    }
 
     return (
         <div
@@ -155,15 +169,16 @@ export function CustomUserMessage({ message }: MessageProps) {
                         borderRadius: "8px",
                         border: "1px solid #2A476C",
                         color: "#E8EAED",
-                        lineHeight: "1.5",
+                        lineHeight: "1.2",
                         wordWrap: "break-word",
                     }}
                 >
-                    {message.content}
+                    <Markdown content={message.content} />
                 </div>
             </div>
         </div>
     );
 }
+
 
 

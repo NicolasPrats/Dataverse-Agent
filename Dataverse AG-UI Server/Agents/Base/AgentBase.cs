@@ -28,7 +28,7 @@ public abstract class AgentBase : IAgent
         foreach (var tool in tools)
         {
             var aiFunction = AIFunctionFactory.Create(tool.Delegate, tool.Name);
-            var diagnosticFunction = new DiagnosticAIFunction(aiFunction, Name, tool.Name, DiagBus);
+            var diagnosticFunction = new DiagnosticAIFunction(aiFunction, Name, tool.Name, DiagBus, TargetType.Tool);
             this.ToolFunctions.Add(diagnosticFunction);
         }
     }
@@ -36,14 +36,14 @@ public abstract class AgentBase : IAgent
     protected void AddTool(Tool tool)
     {
         var aiFunction = AIFunctionFactory.Create(tool.Delegate, tool.Name);
-        var diagnosticFunction = new DiagnosticAIFunction(aiFunction, Name, tool.Name, DiagBus);
+        var diagnosticFunction = new DiagnosticAIFunction(aiFunction, Name, tool.Name, DiagBus, TargetType.Tool);
         this.ToolFunctions.Add(diagnosticFunction);
     }
 
     protected void AddAgentTool(AgentBase targetAgent, string toolName, string description)
     {
         var aiFunction = AIFunctionFactory.Create(targetAgent.TransferRequestAsync, toolName, description);
-        var diagnosticFunction = new DiagnosticAIFunction(aiFunction, Name, targetAgent.Name, DiagBus);
+        var diagnosticFunction = new DiagnosticAIFunction(aiFunction, Name, targetAgent.Name, DiagBus, TargetType.Agent);
         this.ToolFunctions.Add(diagnosticFunction);
     }
 

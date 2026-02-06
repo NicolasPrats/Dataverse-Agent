@@ -89,3 +89,64 @@ pre code {
   padding: 0;
 }
 
+/* Markdown content spacing */
+.markdown-content p {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.markdown-content p:last-child {
+  margin-bottom: 0 !important;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin: 2px 0 !important;
+  padding-left: 24px !important;
+}
+
+.markdown-content li {
+  margin: 0 !important;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  margin: 4px 0 2px 0 !important;
+}
+
+.markdown-content h1:first-child,
+.markdown-content h2:first-child,
+.markdown-content h3:first-child,
+.markdown-content h4:first-child,
+.markdown-content h5:first-child,
+.markdown-content h6:first-child {
+  margin-top: 0 !important;
+}
+
+/* Target markdown content inside divs more specifically */
+.markdown-content > * > p {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.markdown-content > * > p:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Also reduce line-height slightly */
+.markdown-content {
+  line-height: 1.3 !important;
+}
+
+/* Target all elements inside markdown */
+.markdown-content * {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+
+
