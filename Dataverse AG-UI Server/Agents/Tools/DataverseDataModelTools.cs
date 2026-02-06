@@ -12,14 +12,16 @@ using System.Text;
 using TestAgentFramework.Model;
 using TestAgentFramework.Services;
 
-namespace TestAgentFramework.Agents.Tools.Tools
+namespace Dataverse_AG_UI_Server.Agents.Tools
 {
-    public class DataverseAgentTools
+    public class DataverseDataModelTools : DataverseToolsBase
     {
         public const string GetTables = "dataverse_get_tables";
         public const string GetTableMetadata = "dataverse_get_table_metadata";
         public const string GetAttributes = "dataverse_get_attributes";
         public const string GetRelationships = "dataverse_get_relationships";
+        public const string GetGlobalOptionSets = "dataverse_get_global_optionsets";
+        public const string GetGlobalOptionSetDetails = "dataverse_get_global_optionset_details";
         public const string CreateTable = "dataverse_create_table";
         public const string CreateAttribute = "dataverse_create_attribute";
         public const string CreateGlobalOptionSet = "dataverse_create_global_optionset";
@@ -27,52 +29,9 @@ namespace TestAgentFramework.Agents.Tools.Tools
         public const string CreateOneToManyRelationship = "dataverse_create_onetomany_relationship";
         public const string CreateManyToManyRelationship = "dataverse_create_manytomany_relationship";
 
-        private const string SolutionUniqueName = "AgentCustomizations";
-        private const string SolutionDisplayName = "Agent Customizations";
-        private const string PublisherPrefix = "agent";
-
-        private readonly ServiceClient _serviceClient;
-        private readonly int _baseLcid;
-        private Guid? _solutionId;
-
-        public DataverseAgentTools(DataverseSettings configuration)
+        public DataverseDataModelTools(DataverseServiceClientFactory serviceClientFactory)
+            : base(serviceClientFactory)
         {
-            _serviceClient = new ServiceClient(configuration.ConnectionString);
-
-            if (!_serviceClient.IsReady)
-            {
-                throw new InvalidOperationException($"Failed to connect to Dataverse: {_serviceClient.LastError}");
-            }
-
-            // Retrieve the base language LCID from the organization
-            _baseLcid = RetrieveBaseLcid();
-        }
-
-        private int RetrieveBaseLcid()
-        {
-            try
-            {
-                var query = new QueryExpression("organization")
-                {
-                    ColumnSet = new ColumnSet("languagecode"),
-                    TopCount = 1
-                };
-
-                var results = _serviceClient.RetrieveMultiple(query);
-                
-                if (results.Entities.Count > 0 && results.Entities[0].Contains("languagecode"))
-                {
-                    return results.Entities[0].GetAttributeValue<int>("languagecode");
-                }
-                
-                // Fallback to English (US) if unable to retrieve
-                return 1033;
-            }
-            catch
-            {
-                // Fallback to English (US) in case of any error
-                return 1033;
-            }
         }
 
         // Individual tool properties - allows selective tool usage
@@ -87,6 +46,12 @@ namespace TestAgentFramework.Agents.Tools.Tools
 
         public AIFunction GetRelationshipsToolAsync => 
             AIFunctionFactory.Create(GetRelationshipsAsync, GetRelationships);
+
+        public AIFunction GetGlobalOptionSetsToolAsync => 
+            AIFunctionFactory.Create(GetGlobalOptionSetsAsync, GetGlobalOptionSets);
+
+        public AIFunction GetGlobalOptionSetDetailsToolAsync => 
+            AIFunctionFactory.Create(GetGlobalOptionSetDetailsAsync, GetGlobalOptionSetDetails);
 
         public AIFunction CreateTableToolAsync =>
              AIFunctionFactory.Create(CreateTableAsync, CreateTable);
@@ -106,6 +71,41 @@ namespace TestAgentFramework.Agents.Tools.Tools
         public AIFunction CreateManyToManyRelationshipToolAsync =>
             AIFunctionFactory.Create(CreateManyToManyRelationshipAsync, CreateManyToManyRelationship);
 
+        // Grouped tools for easy access
+        /// <summary>
+        /// All read-only tools for querying data model information
+        /// </summary>
+        public AIFunction[] ReadOnlyTools => 
+        [
+            GetTablesToolAsync,
+            GetTableMetadataToolAsync,
+            GetAttributesToolAsync,
+            GetRelationshipsToolAsync,
+            GetGlobalOptionSetsToolAsync,
+            GetGlobalOptionSetDetailsToolAsync
+        ];
+
+        /// <summary>
+        /// All write tools for creating/modifying data model
+        /// </summary>
+        public AIFunction[] WriteTools => 
+        [
+            CreateTableToolAsync,
+            CreateAttributeToolAsync,
+            CreateGlobalOptionSetToolAsync,
+            UpdateOptionSetToolAsync,
+            CreateOneToManyRelationshipToolAsync,
+            CreateManyToManyRelationshipToolAsync
+        ];
+
+        /// <summary>
+        /// All tools (read + write)
+        /// </summary>
+        public AIFunction[] AllTools => 
+        [
+            .. ReadOnlyTools,
+            .. WriteTools
+        ];
 
         [Description("Retrieves all tables (entities) from the Dataverse environment.")]
         public async Task<object> GetTablesAsync()
@@ -120,7 +120,7 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         RetrieveAsIfPublished = false
                     };
 
-                    var response = (RetrieveAllEntitiesResponse)_serviceClient.Execute(request);
+                    var response = (RetrieveAllEntitiesResponse)ServiceClient.Execute(request);
 
                     var tables = response.EntityMetadata
                         .Where(e => e.IsCustomizable?.Value == true || e.IsManaged == false)
@@ -171,7 +171,7 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         RetrieveAsIfPublished = false
                     };
 
-                    var response = (RetrieveEntityResponse)_serviceClient.Execute(request);
+                    var response = (RetrieveEntityResponse)ServiceClient.Execute(request);
                     var entity = response.EntityMetadata;
 
                     return new
@@ -222,11 +222,11 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         RetrieveAsIfPublished = false
                     };
 
-                    var response = (RetrieveEntityResponse)_serviceClient.Execute(request);
+                    var response = (RetrieveEntityResponse)ServiceClient.Execute(request);
 
                     var attributes = response.EntityMetadata.Attributes.Select(a =>
                     {
-                        var attr = new Model.AttributeMetadata
+                        var attr = new TestAgentFramework.Model.AttributeMetadata
                         {
                             LogicalName = a.LogicalName,
                             SchemaName = a.SchemaName,
@@ -254,7 +254,7 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         }
                         else if (a is PicklistAttributeMetadata picklistAttr && picklistAttr.OptionSet != null)
                         {
-                            attr.OptionSet = picklistAttr.OptionSet.Options.Select(o => new Model.OptionMetadata
+                            attr.OptionSet = picklistAttr.OptionSet.Options.Select(o => new TestAgentFramework.Model.OptionMetadata
                             {
                                 Value = o.Value ?? 0,
                                 Label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty,
@@ -302,7 +302,7 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         RetrieveAsIfPublished = false
                     };
 
-                    var response = (RetrieveEntityResponse)_serviceClient.Execute(request);
+                    var response = (RetrieveEntityResponse)ServiceClient.Execute(request);
                     var relationships = new List<RelationshipMetadata>();
 
                     // One-to-Many relationships
@@ -369,6 +369,109 @@ namespace TestAgentFramework.Agents.Tools.Tools
             });
         }
 
+        [Description("Retrieves all global option sets (choices) from the Dataverse environment.")]
+        public async Task<object> GetGlobalOptionSetsAsync()
+        {
+            return await Task.Run<object>(() =>
+            {
+                try
+                {
+                    var request = new RetrieveAllOptionSetsRequest();
+                    var response = (RetrieveAllOptionSetsResponse)ServiceClient.Execute(request);
+
+                    var globalOptionSets = response.OptionSetMetadata
+                        .Where(o => o.IsGlobal == true && o is OptionSetMetadata)
+                        .Cast<OptionSetMetadata>()
+                        .Select(o => new
+                        {
+                            Name = o.Name,
+                            DisplayName = o.DisplayName?.UserLocalizedLabel?.Label,
+                            Description = o.Description?.UserLocalizedLabel?.Label,
+                            IsCustomizable = o.IsCustomizable?.Value ?? false,
+                            OptionCount = o.Options?.Count ?? 0
+                        })
+                        .OrderBy(o => o.Name)
+                        .ToList();
+
+                    return new
+                    {
+                        Success = true,
+                        Data = globalOptionSets,
+                        Count = globalOptionSets.Count
+                    };
+                }
+                catch (Exception ex)
+                {
+                    return new
+                    {
+                        Success = false,
+                        Error = ex.Message,
+                        ErrorType = ex.GetType().Name,
+                        Details = ex.InnerException?.Message
+                    };
+                }
+            });
+        }
+
+        [Description("Gets detailed information about a specific global option set including all its values.")]
+        public async Task<object> GetGlobalOptionSetDetailsAsync(
+            [Description("The logical name of the global option set")] string optionSetName)
+        {
+            return await Task.Run<object>(() =>
+            {
+                try
+                {
+                    var request = new RetrieveOptionSetRequest
+                    {
+                        Name = optionSetName
+                    };
+
+                    var response = (RetrieveOptionSetResponse)ServiceClient.Execute(request);
+                    
+                    if (response.OptionSetMetadata is not OptionSetMetadata optionSet)
+                    {
+                        return new
+                        {
+                            Success = false,
+                            Error = "Option set not found or is not a standard option set",
+                            OptionSetName = optionSetName
+                        };
+                    }
+
+                    var options = optionSet.Options.Select(o => new
+                    {
+                        Value = o.Value ?? 0,
+                        Label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty,
+                        Description = o.Description?.UserLocalizedLabel?.Label,
+                        ExternalValue = o.ExternalValue
+                    }).ToList();
+
+                    return new
+                    {
+                        Success = true,
+                        Name = optionSet.Name,
+                        DisplayName = optionSet.DisplayName?.UserLocalizedLabel?.Label,
+                        Description = optionSet.Description?.UserLocalizedLabel?.Label,
+                        IsGlobal = optionSet.IsGlobal,
+                        IsCustomizable = optionSet.IsCustomizable?.Value ?? false,
+                        Options = options,
+                        OptionCount = options.Count
+                    };
+                }
+                catch (Exception ex)
+                {
+                    return new
+                    {
+                        Success = false,
+                        Error = ex.Message,
+                        ErrorType = ex.GetType().Name,
+                        Details = ex.InnerException?.Message,
+                        OptionSetName = optionSetName
+                    };
+                }
+            });
+        }
+
         [Description("Creates a new custom table in Dataverse.")]
         public async Task<object> CreateTableAsync(
             [Description("The logical name (lowercase with underscores, e.g., 'agent_myproduct')")] string logicalName,
@@ -386,11 +489,11 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         {
                             SchemaName = schemaName,
                             LogicalName = logicalName,
-                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
-                            DisplayCollectionName = new Microsoft.Xrm.Sdk.Label(displayName + "s", _baseLcid),
+                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, BaseLcid),
+                            DisplayCollectionName = new Microsoft.Xrm.Sdk.Label(displayName + "s", BaseLcid),
                             Description = string.IsNullOrWhiteSpace(description) 
                                 ? null 
-                                : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
+                                : new Microsoft.Xrm.Sdk.Label(description, BaseLcid),
                             OwnershipType = OwnershipTypes.UserOwned,
                             IsActivity = false,
                             HasActivities = true,
@@ -403,8 +506,8 @@ namespace TestAgentFramework.Agents.Tools.Tools
                             RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
                                 Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.None),
                             MaxLength = 100,
-                            DisplayName = new Microsoft.Xrm.Sdk.Label("Name", _baseLcid),
-                            Description = new Microsoft.Xrm.Sdk.Label("The primary name attribute", _baseLcid)
+                            DisplayName = new Microsoft.Xrm.Sdk.Label("Name", BaseLcid),
+                            Description = new Microsoft.Xrm.Sdk.Label("The primary name attribute", BaseLcid)
                         },
                         SolutionUniqueName = SolutionUniqueName
                     };
@@ -412,7 +515,7 @@ namespace TestAgentFramework.Agents.Tools.Tools
                     // Ensure solution exists before creating the entity
                     EnsureSolutionExists();
 
-                    var response = (CreateEntityResponse)_serviceClient.Execute(createRequest);
+                    var response = (CreateEntityResponse)ServiceClient.Execute(createRequest);
 
                     // Add entity to solution
                     AddComponentToSolution(response.EntityId, SolutionComponentType.Entity);
@@ -462,10 +565,10 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         {
                             SchemaName = attributeSchemaName,
                             LogicalName = attributeLogicalName,
-                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
+                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, BaseLcid),
                             Description = string.IsNullOrWhiteSpace(description) 
                                 ? null 
-                                : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
+                                : new Microsoft.Xrm.Sdk.Label(description, BaseLcid),
                             RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
                                 isRequired 
                                     ? Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.ApplicationRequired 
@@ -476,10 +579,10 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         {
                             SchemaName = attributeSchemaName,
                             LogicalName = attributeLogicalName,
-                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
+                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, BaseLcid),
                             Description = string.IsNullOrWhiteSpace(description) 
                                 ? null 
-                                : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
+                                : new Microsoft.Xrm.Sdk.Label(description, BaseLcid),
                             RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
                                 isRequired 
                                     ? Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.ApplicationRequired 
@@ -490,10 +593,10 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         {
                             SchemaName = attributeSchemaName,
                             LogicalName = attributeLogicalName,
-                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
+                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, BaseLcid),
                             Description = string.IsNullOrWhiteSpace(description) 
                                 ? null 
-                                : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
+                                : new Microsoft.Xrm.Sdk.Label(description, BaseLcid),
                             RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
                                 isRequired 
                                     ? Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.ApplicationRequired 
@@ -504,26 +607,26 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         {
                             SchemaName = attributeSchemaName,
                             LogicalName = attributeLogicalName,
-                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
+                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, BaseLcid),
                             Description = string.IsNullOrWhiteSpace(description) 
                                 ? null 
-                                : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
+                                : new Microsoft.Xrm.Sdk.Label(description, BaseLcid),
                             RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
                                 isRequired 
                                     ? Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.ApplicationRequired 
                                     : Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.None),
                             OptionSet = new BooleanOptionSetMetadata(
-                                new Microsoft.Xrm.Sdk.Metadata.OptionMetadata(new Microsoft.Xrm.Sdk.Label("Yes", _baseLcid), 1),
-                                new Microsoft.Xrm.Sdk.Metadata.OptionMetadata(new Microsoft.Xrm.Sdk.Label("No", _baseLcid), 0))
+                                new Microsoft.Xrm.Sdk.Metadata.OptionMetadata(new Microsoft.Xrm.Sdk.Label("Yes", BaseLcid), 1),
+                                new Microsoft.Xrm.Sdk.Metadata.OptionMetadata(new Microsoft.Xrm.Sdk.Label("No", BaseLcid), 0))
                         },
                         "datetime" => new DateTimeAttributeMetadata
                         {
                             SchemaName = attributeSchemaName,
                             LogicalName = attributeLogicalName,
-                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
+                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, BaseLcid),
                             Description = string.IsNullOrWhiteSpace(description) 
                                 ? null 
-                                : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
+                                : new Microsoft.Xrm.Sdk.Label(description, BaseLcid),
                             RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
                                 isRequired 
                                     ? Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.ApplicationRequired 
@@ -534,10 +637,10 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         {
                             SchemaName = attributeSchemaName,
                             LogicalName = attributeLogicalName,
-                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
+                            DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, BaseLcid),
                             Description = string.IsNullOrWhiteSpace(description) 
                                 ? null 
-                                : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
+                                : new Microsoft.Xrm.Sdk.Label(description, BaseLcid),
                             RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
                                 isRequired 
                                     ? Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.ApplicationRequired 
@@ -551,10 +654,10 @@ namespace TestAgentFramework.Agents.Tools.Tools
                             {
                                 SchemaName = attributeSchemaName,
                                 LogicalName = attributeLogicalName,
-                                DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
+                                DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, BaseLcid),
                                 Description = string.IsNullOrWhiteSpace(description) 
                                     ? null 
-                                    : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
+                                    : new Microsoft.Xrm.Sdk.Label(description, BaseLcid),
                                 RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
                                     isRequired 
                                         ? Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.ApplicationRequired 
@@ -579,7 +682,7 @@ namespace TestAgentFramework.Agents.Tools.Tools
                     // Ensure solution exists before creating the attribute
                     EnsureSolutionExists();
 
-                    var response = (CreateAttributeResponse)_serviceClient.Execute(createRequest);
+                    var response = (CreateAttributeResponse)ServiceClient.Execute(createRequest);
 
                     // Add attribute to solution
                     AddComponentToSolution(response.AttributeId, SolutionComponentType.Attribute);
@@ -629,10 +732,10 @@ namespace TestAgentFramework.Agents.Tools.Tools
                     var optionSetMetadata = new OptionSetMetadata
                     {
                         Name = optionSetName,
-                        DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, _baseLcid),
+                        DisplayName = new Microsoft.Xrm.Sdk.Label(displayName, BaseLcid),
                         Description = string.IsNullOrWhiteSpace(description) 
                             ? null 
-                            : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
+                            : new Microsoft.Xrm.Sdk.Label(description, BaseLcid),
                         IsGlobal = true,
                         OptionSetType = OptionSetType.Picklist,
                         Options = { }
@@ -641,7 +744,7 @@ namespace TestAgentFramework.Agents.Tools.Tools
                     foreach (var option in options)
                     {
                         optionSetMetadata.Options.Add(new Microsoft.Xrm.Sdk.Metadata.OptionMetadata(
-                            new Microsoft.Xrm.Sdk.Label(option.Key, _baseLcid),
+                            new Microsoft.Xrm.Sdk.Label(option.Key, BaseLcid),
                             option.Value));
                     }
 
@@ -654,7 +757,7 @@ namespace TestAgentFramework.Agents.Tools.Tools
                     // Ensure solution exists before creating the option set
                     EnsureSolutionExists();
 
-                    var response = (CreateOptionSetResponse)_serviceClient.Execute(request);
+                    var response = (CreateOptionSetResponse)ServiceClient.Execute(request);
 
                     // Add option set to solution
                     AddComponentToSolution(response.OptionSetId, SolutionComponentType.OptionSet);
@@ -705,10 +808,10 @@ namespace TestAgentFramework.Agents.Tools.Tools
                                 var insertRequest = new InsertOptionValueRequest
                                 {
                                     OptionSetName = optionSetName,
-                                    Label = new Microsoft.Xrm.Sdk.Label(option.Key, _baseLcid),
+                                    Label = new Microsoft.Xrm.Sdk.Label(option.Key, BaseLcid),
                                     Value = option.Value
                                 };
-                                _serviceClient.Execute(insertRequest);
+                                ServiceClient.Execute(insertRequest);
                                 messages.Add($"Added option '{option.Key}' with value {option.Value}");
                             }
                         }
@@ -725,7 +828,7 @@ namespace TestAgentFramework.Agents.Tools.Tools
                                 OptionSetName = optionSetName,
                                 Value = value
                             };
-                            _serviceClient.Execute(deleteRequest);
+                            ServiceClient.Execute(deleteRequest);
                             messages.Add($"Removed option with value {value}");
                         }
                     }
@@ -742,9 +845,9 @@ namespace TestAgentFramework.Agents.Tools.Tools
                                 {
                                     OptionSetName = optionSetName,
                                     Value = int.Parse(option.Key),
-                                    Label = new Microsoft.Xrm.Sdk.Label(option.Value, _baseLcid)
+                                    Label = new Microsoft.Xrm.Sdk.Label(option.Value, BaseLcid)
                                 };
-                                _serviceClient.Execute(updateRequest);
+                                ServiceClient.Execute(updateRequest);
                                 messages.Add($"Updated option {option.Key} to '{option.Value}'");
                             }
                         }
@@ -789,10 +892,10 @@ namespace TestAgentFramework.Agents.Tools.Tools
                     {
                         SchemaName = lookupAttributeSchemaName,
                         LogicalName = lookupAttributeLogicalName,
-                        DisplayName = new Microsoft.Xrm.Sdk.Label(lookupDisplayName, _baseLcid),
+                        DisplayName = new Microsoft.Xrm.Sdk.Label(lookupDisplayName, BaseLcid),
                         Description = string.IsNullOrWhiteSpace(description) 
                             ? null 
-                            : new Microsoft.Xrm.Sdk.Label(description, _baseLcid),
+                            : new Microsoft.Xrm.Sdk.Label(description, BaseLcid),
                         RequiredLevel = new Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevelManagedProperty(
                             Microsoft.Xrm.Sdk.Metadata.AttributeRequiredLevel.None)
                     };
@@ -806,7 +909,7 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         {
                             Behavior = AssociatedMenuBehavior.UseCollectionName,
                             Group = AssociatedMenuGroup.Details,
-                            Label = new Microsoft.Xrm.Sdk.Label(lookupDisplayName, _baseLcid),
+                            Label = new Microsoft.Xrm.Sdk.Label(lookupDisplayName, BaseLcid),
                             Order = 10000
                         },
                         CascadeConfiguration = new CascadeConfiguration
@@ -830,7 +933,7 @@ namespace TestAgentFramework.Agents.Tools.Tools
                     // Ensure solution exists before creating the relationship
                     EnsureSolutionExists();
 
-                    var response = (CreateOneToManyResponse)_serviceClient.Execute(request);
+                    var response = (CreateOneToManyResponse)ServiceClient.Execute(request);
 
                     // Add relationship and attribute to solution
                     AddComponentToSolution(response.RelationshipId, SolutionComponentType.EntityRelationship);
@@ -883,14 +986,14 @@ namespace TestAgentFramework.Agents.Tools.Tools
                         {
                             Behavior = AssociatedMenuBehavior.UseLabel,
                             Group = AssociatedMenuGroup.Details,
-                            Label = new Microsoft.Xrm.Sdk.Label($"Related {entity2LogicalName}", _baseLcid),
+                            Label = new Microsoft.Xrm.Sdk.Label($"Related {entity2LogicalName}", BaseLcid),
                             Order = 10000
                         },
                         Entity2AssociatedMenuConfiguration = new AssociatedMenuConfiguration
                         {
                             Behavior = AssociatedMenuBehavior.UseLabel,
                             Group = AssociatedMenuGroup.Details,
-                            Label = new Microsoft.Xrm.Sdk.Label($"Related {entity1LogicalName}", _baseLcid),
+                            Label = new Microsoft.Xrm.Sdk.Label($"Related {entity1LogicalName}", BaseLcid),
                             Order = 10000
                         }
                     };
@@ -905,7 +1008,7 @@ namespace TestAgentFramework.Agents.Tools.Tools
                     // Ensure solution exists before creating the relationship
                     EnsureSolutionExists();
 
-                    var response = (CreateManyToManyResponse)_serviceClient.Execute(request);
+                    var response = (CreateManyToManyResponse)ServiceClient.Execute(request);
 
                     // Add relationship to solution
                     AddComponentToSolution(response.ManyToManyRelationshipId, SolutionComponentType.EntityRelationship);
@@ -934,99 +1037,9 @@ namespace TestAgentFramework.Agents.Tools.Tools
             });
         }
 
-        private Guid EnsureSolutionExists()
-        {
-            if (_solutionId.HasValue)
-                return _solutionId.Value;
-
-            // Check if solution already exists
-            var query = new QueryExpression("solution")
-            {
-                ColumnSet = new ColumnSet("solutionid"),
-                Criteria = new FilterExpression
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression("uniquename", ConditionOperator.Equal, SolutionUniqueName)
-                    }
-                }
-            };
-
-            var results = _serviceClient.RetrieveMultiple(query);
-            
-            if (results.Entities.Count > 0)
-            {
-                _solutionId = results.Entities[0].Id;
-                return _solutionId.Value;
-            }
-
-            // Solution doesn't exist, create it
-            var publisherId = EnsurePublisherExists();
-
-            var solution = new Entity("solution")
-            {
-                ["uniquename"] = SolutionUniqueName,
-                ["friendlyname"] = SolutionDisplayName,
-                ["publisherid"] = new EntityReference("publisher", publisherId),
-                ["version"] = "1.0.0.0",
-                ["description"] = "Solution containing all customizations created by AI agents"
-            };
-
-            _solutionId = _serviceClient.Create(solution);
-            return _solutionId.Value;
-        }
-
-        private Guid EnsurePublisherExists()
-        {
-            // Check if publisher already exists
-            var query = new QueryExpression("publisher")
-            {
-                ColumnSet = new ColumnSet("publisherid"),
-                Criteria = new FilterExpression
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression("customizationprefix", ConditionOperator.Equal, PublisherPrefix)
-                    }
-                }
-            };
-
-            var results = _serviceClient.RetrieveMultiple(query);
-            
-            if (results.Entities.Count > 0)
-            {
-                return results.Entities[0].Id;
-            }
-
-            // Publisher doesn't exist, create it
-            var publisher = new Entity("publisher")
-            {
-                ["uniquename"] = "AgentPublisher",
-                ["friendlyname"] = "Agent Publisher",
-                ["customizationprefix"] = PublisherPrefix,
-                ["customizationoptionvalueprefix"] = 10000,
-                ["description"] = "Publisher for AI agent customizations"
-            };
-
-            return _serviceClient.Create(publisher);
-        }
-
-        private void AddComponentToSolution(Guid componentId, SolutionComponentType componentType)
-        {
-            var solutionId = EnsureSolutionExists();
-
-            var request = new AddSolutionComponentRequest
-            {
-                ComponentId = componentId,
-                ComponentType = (int)componentType,
-                SolutionUniqueName = SolutionUniqueName,
-                AddRequiredComponents = true
-            };
-
-            _serviceClient.Execute(request);
-        }
-
 
     }
 }
+
+
 

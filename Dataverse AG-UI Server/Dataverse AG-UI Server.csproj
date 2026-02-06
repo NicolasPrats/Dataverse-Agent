@@ -8,11 +8,45 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Agents\Tools\Schemas\9.0.0.2090\CustomizationsSolution.xsd" />
+    <None Remove="Agents\Tools\Schemas\9.0.0.2090\Fetch.xsd" />
+    <None Remove="Agents\Tools\Schemas\9.0.0.2090\FormXml.xsd" />
+    <None Remove="Agents\Tools\Schemas\9.0.0.2090\isv.config.xsd" />
+    <None Remove="Agents\Tools\Schemas\9.0.0.2090\ParameterXml.xsd" />
+    <None Remove="Agents\Tools\Schemas\9.0.0.2090\reports.config.xsd" />
+    <None Remove="Agents\Tools\Schemas\9.0.0.2090\RibbonCore.xsd" />
+    <None Remove="Agents\Tools\Schemas\9.0.0.2090\RibbonTypes.xsd" />
+    <None Remove="Agents\Tools\Schemas\9.0.0.2090\RibbonWSS.xsd" />
+    <None Remove="Agents\Tools\Schemas\9.0.0.2090\SiteMap.xsd" />
+    <None Remove="Agents\Tools\Schemas\9.0.0.2090\SiteMapType.xsd" />
+    <None Remove="Agents\Tools\Schemas\9.0.0.2090\VisualizationDataDescription.xsd" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Agents\Tools\Schemas\9.0.0.2090\CustomizationsSolution.xsd" />
+    <EmbeddedResource Include="Agents\Tools\Schemas\9.0.0.2090\Fetch.xsd" />
+    <EmbeddedResource Include="Agents\Tools\Schemas\9.0.0.2090\FormXml.xsd" />
+    <EmbeddedResource Include="Agents\Tools\Schemas\9.0.0.2090\isv.config.xsd" />
+    <EmbeddedResource Include="Agents\Tools\Schemas\9.0.0.2090\ParameterXml.xsd" />
+    <EmbeddedResource Include="Agents\Tools\Schemas\9.0.0.2090\reports.config.xsd" />
+    <EmbeddedResource Include="Agents\Tools\Schemas\9.0.0.2090\RibbonCore.xsd" />
+    <EmbeddedResource Include="Agents\Tools\Schemas\9.0.0.2090\RibbonTypes.xsd" />
+    <EmbeddedResource Include="Agents\Tools\Schemas\9.0.0.2090\RibbonWSS.xsd" />
+    <EmbeddedResource Include="Agents\Tools\Schemas\9.0.0.2090\SiteMap.xsd" />
+    <EmbeddedResource Include="Agents\Tools\Schemas\9.0.0.2090\SiteMapType.xsd" />
+    <EmbeddedResource Include="Agents\Tools\Schemas\9.0.0.2090\VisualizationDataDescription.xsd" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Azure.AI.OpenAI" Version="2.8.0-beta.1" />
     <PackageReference Include="Azure.Identity" Version="1.17.1" />
     <PackageReference Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" Version="1.0.0-preview.260128.1" />
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.2.0-preview.1.26063.2" />
     <PackageReference Include="Microsoft.PowerPlatform.Dataverse.Client" Version="1.2.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Tests\" />
   </ItemGroup>
 
 

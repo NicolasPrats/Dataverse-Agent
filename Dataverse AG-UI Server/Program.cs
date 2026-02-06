@@ -33,18 +33,20 @@ namespace Dataverse_AG_UI_Server
             appConfig.Validate();
 
 
-            var dataverseTools = new DataverseAgentTools(appConfig.Dataverse);
+            var serviceClientFactory = new DataverseServiceClientFactory(appConfig.Dataverse);
 
             var chatClientFactory = new AzureOpenAIChatClientFactory(appConfig);
-            var agentFactory = new AgentFactory(appConfig, chatClientFactory, dataverseTools);
+            var agentFactory = new AgentFactory(appConfig, chatClientFactory, serviceClientFactory);
             var orchestrator = new AgentOrchestrator();
 
-            var dataModelAgent = agentFactory.CreateDataModelBuilderAgent();
             var architectAgent = agentFactory.CreateArchitectAgent();
+            var dataModelAgent = agentFactory.CreateDataModelBuilderAgent();
+            var uiBuilderAgent = agentFactory.CreateUIBuilderAgent();
 
             app.MapAGUI("/", architectAgent.InternalAgent);
             app.MapAGUI("/architect", architectAgent.InternalAgent);
             app.MapAGUI("/datamodel", dataModelAgent.InternalAgent);
+            app.MapAGUI("/ui", uiBuilderAgent.InternalAgent);
             app.Run();
         }
     }

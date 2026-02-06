@@ -198,7 +198,125 @@ if (type == "string") { /* ... */ }
 if (type == "integer") { /* ... */ }
 ```
 
-### 8. NuGet Package Versions
+### 8. DRY Principle - Don't Repeat Yourself
+
+**DO NOT** duplicate code. Always factor out common logic into reusable methods, classes, or utilities:
+
+```csharp
+// ✅ GOOD - Factored common logic
+public class ValidationHelper
+{
+    public static bool IsValidEmail(string email)
+    {
+        return !string.IsNullOrWhiteSpace(email) && email.Contains('@');
+    }
+}
+
+public class UserService
+{
+    public bool ValidateUser(User user)
+    {
+        return ValidationHelper.IsValidEmail(user.Email);
+    }
+}
+
+public class ContactService
+{
+    public bool ValidateContact(Contact contact)
+    {
+        return ValidationHelper.IsValidEmail(contact.Email);
+    }
+}
+
+// ❌ AVOID - Duplicated validation logic
+public class UserService
+{
+    public bool ValidateUser(User user)
+    {
+        return !string.IsNullOrWhiteSpace(user.Email) && user.Email.Contains('@');
+    }
+}
+
+public class ContactService
+{
+    public bool ValidateContact(Contact contact)
+    {
+        return !string.IsNullOrWhiteSpace(contact.Email) && contact.Email.Contains('@');
+    }
+}
+```
+
+**DO** extract repeated patterns into base classes or extension methods:
+
+```csharp
+// ✅ GOOD - Base class for common behavior
+public abstract class RepositoryBase<T>
+{
+    protected readonly DbContext _context;
+    
+    protected RepositoryBase(DbContext context)
+    {
+        _context = context;
+    }
+    
+    public virtual async Task<T?> GetByIdAsync(string id)
+    {
+        return await _context.Set<T>().FindAsync(id);
+    }
+    
+    public virtual async Task SaveAsync(T entity)
+    {
+        _context.Set<T>().Update(entity);
+        await _context.SaveChangesAsync();
+    }
+}
+
+// ❌ AVOID - Duplicating repository logic in each class
+public class UserRepository
+{
+    private readonly DbContext _context;
+    
+    public async Task<User?> GetByIdAsync(string id)
+    {
+        return await _context.Set<User>().FindAsync(id);
+    }
+    
+    public async Task SaveAsync(User entity)
+    {
+        _context.Set<User>().Update(entity);
+        await _context.SaveChangesAsync();
+    }
+}
+
+public class ProductRepository
+{
+    private readonly DbContext _context;
+    
+    public async Task<Product?> GetByIdAsync(string id)
+    {
+        return await _context.Set<Product>().FindAsync(id);
+    }
+    
+    public async Task SaveAsync(Product entity)
+    {
+        _context.Set<Product>().Update(entity);
+        await _context.SaveChangesAsync();
+    }
+}
+```
+
+**When to Factor Out Code:**
+- When the same logic appears 2+ times
+- When patterns are similar but not identical (consider parameterization)
+- When code blocks serve the same conceptual purpose
+- When factoring improves testability and maintainability
+
+**When NOT to Factor Out:**
+- When it reduces code clarity significantly
+- When the duplication is coincidental (looks similar but serves different purposes)
+- When factoring creates tight coupling between unrelated modules
+
+### 9. NuGet Package Versions
 
 **ALWAYS** use the latest stable version of NuGet packages unless there is a specific reason not to:
 
@@ -230,6 +348,103 @@ if (type == "integer") { /* ... */ }
 - A newer version has breaking changes you cannot accommodate
 - Project requirements mandate a specific version
 - Security or stability issues with latest version
+
+### 10. Documentation and Comments
+
+**DO NOT** generate documentation files (`.md`, `.txt`, etc.) unless explicitly requested by the user.
+
+**DO NOT** write comments that simply paraphrase the code:
+
+```csharp
+// ❌ AVOID - Useless paraphrasing comments
+public class UserService
+{
+    // Gets the user by id
+    public async Task<User?> GetUserByIdAsync(string id)
+    {
+        // Return the user from the repository
+        return await _repository.GetByIdAsync(id);
+    }
+    
+    // Saves the user
+    public async Task SaveUserAsync(User user)
+    {
+        // Validate the user
+        if (user == null)
+            throw new ArgumentNullException(nameof(user));
+            
+        // Save to repository
+        await _repository.SaveAsync(user);
+    }
+}
+```
+
+**DO** write comments only when they add value:
+- Explain **WHY**, not **WHAT**
+- Document complex algorithms or business logic
+- Clarify non-obvious decisions or workarounds
+- Provide context that isn't obvious from the code
+
+```csharp
+// ✅ GOOD - Comments that add value
+public class UserService
+{
+    public async Task<User?> GetUserByIdAsync(string id)
+    {
+        // No comment needed - method name is self-explanatory
+        return await _repository.GetByIdAsync(id);
+    }
+    
+    public async Task SaveUserAsync(User user)
+    {
+        if (user == null)
+            throw new ArgumentNullException(nameof(user));
+        
+        // Clear cache before save to prevent stale data issues with eventual consistency
+        // See bug #1234 for context
+        await _cache.InvalidateUserCacheAsync(user.Id);
+        
+        await _repository.SaveAsync(user);
+    }
+    
+    public async Task<List<User>> GetActiveUsersAsync()
+    {
+        // Using a 90-day threshold per business requirement from PROD-567
+        // Users are considered active if they logged in within the last 90 days
+        var threshold = DateTime.UtcNow.AddDays(-90);
+        return await _repository.GetUsersLoggedInAfterAsync(threshold);
+    }
+}
+```
+
+**DO** prefer self-documenting code over comments:
+
+```csharp
+// ✅ GOOD - Self-documenting code
+private const int ActiveUserThresholdDays = 90;
+
+public async Task<List<User>> GetActiveUsersAsync()
+{
+    var threshold = DateTime.UtcNow.AddDays(-ActiveUserThresholdDays);
+    return await _repository.GetUsersLoggedInAfterAsync(threshold);
+}
+
+// ❌ AVOID - Needs comment because code isn't clear
+public async Task<List<User>> GetActiveUsersAsync()
+{
+    // 90 days = active user threshold
+    var threshold = DateTime.UtcNow.AddDays(-90);
+    return await _repository.GetUsersLoggedInAfterAsync(threshold);
+}
+```
+
+**Summary on Documentation:**
+- ✅ Write comments that explain **WHY** and provide context
+- ✅ Use self-documenting code (clear names, constants, etc.)
+- ✅ Document complex algorithms, workarounds, and business rules
+- ❌ Don't generate documentation files unless explicitly asked
+- ❌ Don't write comments that just restate what the code does
+- ❌ When in doubt, prefer no comment over a useless one
 
 ## Specific Patterns for This Project
 
@@ -344,6 +559,71 @@ public void ProcessData()
     if (status == StatusActive) { /* ... */ }
     await Task.Delay(DefaultDelayMs);
     var result = Calculate(Math.PI);
+}
+```
+
+### ❌ Don't duplicate code
+
+```csharp
+// ❌ AVOID - Code duplication
+public class OrderService
+{
+    public decimal CalculateOrderTotal(Order order)
+    {
+        decimal total = 0;
+        foreach (var item in order.Items)
+        {
+            total += item.Price * item.Quantity;
+        }
+        if (order.DiscountPercent > 0)
+        {
+            total -= total * (order.DiscountPercent / 100);
+        }
+        return total;
+    }
+    
+    public decimal CalculateQuoteTotal(Quote quote)
+    {
+        decimal total = 0;
+        foreach (var item in quote.Items)
+        {
+            total += item.Price * item.Quantity;
+        }
+        if (quote.DiscountPercent > 0)
+        {
+            total -= total * (quote.DiscountPercent / 100);
+        }
+        return total;
+    }
+}
+
+// ✅ GOOD - Factored common logic
+public class PricingService
+{
+    public decimal CalculateTotal<T>(IEnumerable<T> items, decimal discountPercent) 
+        where T : ILineItem
+    {
+        var total = items.Sum(item => item.Price * item.Quantity);
+        
+        if (discountPercent > 0)
+        {
+            total -= total * (discountPercent / 100);
+        }
+        
+        return total;
+    }
+}
+
+public class OrderService(PricingService pricingService)
+{
+    public decimal CalculateOrderTotal(Order order) 
+        => pricingService.CalculateTotal(order.Items, order.DiscountPercent);
+}
+
+public class QuoteService(PricingService pricingService)
+{
+    public decimal CalculateQuoteTotal(Quote quote) 
+        => pricingService.CalculateTotal(quote.Items, quote.DiscountPercent);
 }
 ```
 
@@ -551,5 +831,9 @@ If the answer to any question is "No", refactor the code before proceeding.
 - ✅ Follow async/await patterns for I/O operations
 - ✅ Leverage C# 12+ features when they improve code clarity
 - ✅ **Never use magic numbers - always use named constants or enums**
+- ✅ **Apply DRY principle - factor out duplicated code when it makes sense**
 - ✅ **Always use the latest stable version of NuGet packages by default**
+- ✅ **Do not generate documentation files unless explicitly requested**
+- ✅ **Avoid useless comments that paraphrase code - prefer self-documenting code**
+- ✅ **Write comments only when they explain WHY or provide valuable context**
 - ✅ **ALWAYS verify SOLID principles after code generation or modification**

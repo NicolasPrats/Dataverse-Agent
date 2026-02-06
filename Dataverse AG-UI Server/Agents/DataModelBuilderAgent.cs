@@ -2,7 +2,7 @@ using TestAgentFramework.Agents.Base;
 using TestAgentFramework.Services;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
-using TestAgentFramework.Agents.Tools.Tools;
+using Dataverse_AG_UI_Server.Agents.Tools;
 
 namespace TestAgentFramework.Agents;
 
@@ -19,21 +19,24 @@ public class DataModelBuilderAgent : AgentBase
 - Suggest best practices for data modeling in Dataverse
 
 Available tools:
-- {DataverseAgentTools.GetTables}: Retrieve all tables from the environment
-- {DataverseAgentTools.GetTableMetadata}: Get detailed metadata for a specific table
-- {DataverseAgentTools.GetAttributes}: Get all attributes/columns for a table
-- {DataverseAgentTools.GetRelationships}: Get all relationships for a table
-- {DataverseAgentTools.CreateTable}: Create a new custom table
-- {DataverseAgentTools.CreateAttribute}: Create a new attribute/column in a table (supports: string, integer, decimal, boolean, datetime, money, picklist)
-- {DataverseAgentTools.CreateGlobalOptionSet}: Create a global option set (choice)
-- {DataverseAgentTools.UpdateOptionSet}: Update an existing option set
-- {DataverseAgentTools.CreateOneToManyRelationship}: Create a 1:N (one-to-many) relationship between tables
-- {DataverseAgentTools.CreateManyToManyRelationship}: Create a N:N (many-to-many) relationship between tables
+- {DataverseDataModelTools.GetTables}: Retrieve all tables from the environment
+- {DataverseDataModelTools.GetTableMetadata}: Get detailed metadata for a specific table
+- {DataverseDataModelTools.GetAttributes}: Get all attributes/columns for a table
+- {DataverseDataModelTools.GetRelationships}: Get all relationships for a table
+- {DataverseDataModelTools.GetGlobalOptionSets}: List all global option sets (choices) from the environment
+- {DataverseDataModelTools.GetGlobalOptionSetDetails}: Get detailed information about a specific global option set including all its values
+- {DataverseDataModelTools.CreateTable}: Create a new custom table
+- {DataverseDataModelTools.CreateAttribute}: Create a new attribute/column in a table (supports: string, integer, decimal, boolean, datetime, money, picklist)
+- {DataverseDataModelTools.CreateGlobalOptionSet}: Create a global option set (choice)
+- {DataverseDataModelTools.UpdateOptionSet}: Update an existing option set
+- {DataverseDataModelTools.CreateOneToManyRelationship}: Create a 1:N (one-to-many) relationship between tables
+- {DataverseDataModelTools.CreateManyToManyRelationship}: Create a N:N (many-to-many) relationship between tables
 
 When asked to create or modify data models:
-1. First analyze the existing structure if needed using {DataverseAgentTools.GetTables} or {DataverseAgentTools.GetAttributes}
-2. Check what existing components can be reused
-3. Plan the changes carefully
+1. First analyze the existing structure if needed using {DataverseDataModelTools.GetTables} or {DataverseDataModelTools.GetAttributes}
+2. For picklist attributes, check existing global option sets using {DataverseDataModelTools.GetGlobalOptionSets} and {DataverseDataModelTools.GetGlobalOptionSetDetails} to see if an appropriate one already exists
+3. Check what existing components can be reused
+4. Plan the changes carefully
 4. If you have multiple options to define a data model, always priviligiate the most scalable and maintainable approach.
 5. If your proposition cannot be derived directly from the input, ask clarifying questions before proceeding.
 5. Execute the changes step by step
@@ -73,9 +76,9 @@ Display names (User-friendly with spaces):
 IMPORTANT: when the user is talking about a table, he may give the display name or the logical name. If you don't find a table using the logical name, retrieve all tables and check whether one has a similar display name. Ask confirmation once a table has been found.";
 
 
-    private DataverseAgentTools DataverseAgentTools { get; }
+    private DataverseDataModelTools DataverseAgentTools { get; }
 
-    public DataModelBuilderAgent(DataverseAgentTools dataverseAgentTools)
+    public DataModelBuilderAgent(DataverseDataModelTools dataverseAgentTools)
         : base("DataModelBuilder", DefaultInstructions)
     {
         DataverseAgentTools = dataverseAgentTools;
@@ -89,24 +92,7 @@ IMPORTANT: when the user is talking about a table, he may give the display name 
         return chatClient.AsAIAgent(
             instructions: Instructions,
             name: Name,
-            tools: [
-                DataverseAgentTools.GetAttributesToolAsync,
-                DataverseAgentTools.GetRelationshipsToolAsync,
-                DataverseAgentTools.GetTableMetadataToolAsync,
-                DataverseAgentTools.GetTablesToolAsync,
-
-
-                DataverseAgentTools.CreateAttributeToolAsync,
-                DataverseAgentTools.CreateTableToolAsync,
-                DataverseAgentTools.CreateGlobalOptionSetToolAsync,
-
-               
-                DataverseAgentTools.UpdateOptionSetToolAsync,
-
-                DataverseAgentTools.CreateOneToManyRelationshipToolAsync,
-                DataverseAgentTools.CreateManyToManyRelationshipToolAsync
-
-                ]
+            tools: DataverseAgentTools.AllTools
         );
     }
 
