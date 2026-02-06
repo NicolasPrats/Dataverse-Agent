@@ -154,9 +154,9 @@ export default function DiagnosticLogs() {
                                     )}
                                 </div>
 
-                                {event.Payload && (
+                                {event.Payload ? (
                                     <div style={{ marginTop: "8px" }}>
-                                        <Caption1 weight="semibold" style={{ color: "#9AA0A6" }}>
+                                        <Caption1 style={{ color: "#9AA0A6", fontWeight: 600 }}>
                                             Payload:
                                         </Caption1>
                                         <pre
@@ -174,9 +174,9 @@ export default function DiagnosticLogs() {
                                             {JSON.stringify(event.Payload, null, 2)}
                                         </pre>
                                     </div>
-                                )}
+                                ) : null}
 
-                                {event.Result && (
+                                {event.Result ? (
                                     <div style={{ marginTop: "8px" }}>
                                         <Button
                                             appearance="subtle"
@@ -192,7 +192,7 @@ export default function DiagnosticLogs() {
                                         >
                                             Result
                                         </Button>
-                                        {expandedResults.has(index) && (
+                                        {expandedResults.has(index) ? (
                                             <pre
                                                 style={{
                                                     background: "#1B2A3D",
@@ -207,9 +207,9 @@ export default function DiagnosticLogs() {
                                             >
                                                 {JSON.stringify(event.Result, null, 2)}
                                             </pre>
-                                        )}
+                                        ) : null}
                                     </div>
-                                )}
+                                ) : null}
                             </div>
                         </Card>
                     ))
