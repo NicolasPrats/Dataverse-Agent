@@ -15,7 +15,8 @@
     public enum TargetType
     {
         Tool,
-        Agent
+        Agent,
+        SimulatedResponse
     }
 
 }

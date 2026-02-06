@@ -62,6 +62,20 @@ public class DiagnosticAIFunction(AIFunction innerFunction, string agentName, st
                 Duration = duration
             };
             _diagBus.Publish(completeEvent);
+            if (_targetType == TargetType.Agent)
+            {
+               var simulateResponseEvent = new AgentDiagnosticEvent
+                {
+                    EventId = Guid.NewGuid(),
+                   SourceAgent = _target,
+                    Target = _agentName,
+                    TargetType = TargetType.SimulatedResponse,
+                    Payload = new { Status = "Called successfully.", Arguments = arguments },
+                    Result = result,
+                    Duration = duration
+                };
+                _diagBus.Publish(simulateResponseEvent);
+            }
             
             return result;
         }

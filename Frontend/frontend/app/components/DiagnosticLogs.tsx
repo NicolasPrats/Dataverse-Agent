@@ -1,24 +1,17 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
-import {
-    Card,
-    CardHeader,
-    Badge,
-    Body1,
-    Caption1,
-    Text,
-    Button,
-} from "@fluentui/react-components";
-import {
-    ChevronDownRegular,
-    ChevronRightRegular,
-    CircleFilled,
-} from "@fluentui/react-icons";
+import { Badge, Caption1, Text } from "@fluentui/react-components";
+import { CircleFilled } from "@fluentui/react-icons";
+import { getAgentConfig } from "../config/agentConfig";
+import { ToolEventMessage } from "./diagnostic/ToolEventMessage";
+import { AgentEventMessage } from "./diagnostic/AgentEventMessage";
+import { SimulatedResponseEventMessage } from "./diagnostic/SimulatedResponseEventMessage";
 
 enum TargetType {
     Tool = "Tool",
-    Agent = "Agent"
+    Agent = "Agent",
+    SimulatedResponse = "SimulatedResponse"
 }
 
 interface AgentDiagnosticEvent {
@@ -33,9 +26,10 @@ interface AgentDiagnosticEvent {
 }
 
 export default function DiagnosticLogs() {
-const [events, setEvents] = useState<AgentDiagnosticEvent[]>([]);
-const [isConnected, setIsConnected] = useState(false);
-const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
+    const [events, setEvents] = useState<AgentDiagnosticEvent[]>([]);
+    const [isConnected, setIsConnected] = useState(false);
+    const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
+    const [expandedPayloads, setExpandedPayloads] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         const eventSource = new EventSource("/api/diagnostics");
@@ -99,10 +93,6 @@ const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
         return duration.toString();
     };
 
-    const formatTimestamp = (timestamp: string) => {
-        return new Date(timestamp).toLocaleTimeString();
-    };
-
     const toggleResult = (eventId: string) => {
         const newExpanded = new Set(expandedResults);
         if (newExpanded.has(eventId)) {
@@ -111,6 +101,16 @@ const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
             newExpanded.add(eventId);
         }
         setExpandedResults(newExpanded);
+    };
+
+    const togglePayload = (eventId: string) => {
+        const newExpanded = new Set(expandedPayloads);
+        if (newExpanded.has(eventId)) {
+            newExpanded.delete(eventId);
+        } else {
+            newExpanded.add(eventId);
+        }
+        setExpandedPayloads(newExpanded);
     };
 
     return (
@@ -128,125 +128,118 @@ const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
                 </Badge>
             </div>
 
-            <div
-                style={{
-                    flex: 1,
-                    overflow: "auto",
-                    minHeight: 0,
-                }}
-            >
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "12px",
-                    }}
-                >
+            <div style={{ flex: 1, overflow: "auto", minHeight: 0 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                     {events.length === 0 ? (
                         <div style={{ textAlign: "center", padding: "32px" }}>
                             <Caption1>Waiting for logs...</Caption1>
                         </div>
                     ) : (
-                        events.map((event, index) => (
-                            <Card key={event.EventId || index} style={{ padding: "12px" }}>
-                                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "8px",
-                                            flexWrap: "wrap",
-                                        }}
-                                    >
-                                        <Caption1 style={{ color: "#9AA0A6" }}>
-                                            {formatTimestamp(event.Timestamp)}
-                                        </Caption1>
-                                        <Badge appearance="filled" color="informative">
-                                            {event.SourceAgent}
-                                        </Badge>
-                                        <Text style={{ color: "#9AA0A6" }}>→</Text>
-                                        <Badge 
-                                            appearance="filled" 
-                                            color={event.TargetType === TargetType.Tool ? "success" : "brand"}
-                                        >
-                                            {event.Target}
-                                        </Badge>
-                                        <Badge 
-                                            appearance="tint" 
-                                            color={event.TargetType === TargetType.Tool ? "success" : "brand"}
-                                        >
-                                            {event.TargetType}
-                                        </Badge>
-                                        {event.Duration && (
-                                            <Badge appearance="tint" color="warning">
-                                                {formatDuration(event.Duration)}
-                                            </Badge>
-                                        )}
-                                    </div>
+                        events.map((event) => {
+                            const agentConfig = getAgentConfig(event.SourceAgent);
+                            const timestamp = new Date(event.Timestamp).toLocaleString("fr-FR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                            });
 
-                                    {event.Payload ? (
-                                        <div style={{ marginTop: "8px" }}>
-                                            <Caption1 style={{ color: "#9AA0A6", fontWeight: 600 }}>
-                                                Payload:
-                                            </Caption1>
-                                            <pre
+                            return (
+                                <div
+                                    key={event.EventId}
+                                    style={{
+                                        display: "flex",
+                                        gap: "12px",
+                                        padding: "12px 0",
+                                        alignItems: "flex-start",
+                                    }}
+                                >
+                                    <img
+                                        src={agentConfig.avatar}
+                                        alt={agentConfig.displayName}
+                                        style={{
+                                            width: "32px",
+                                            height: "32px",
+                                            borderRadius: "50%",
+                                            flexShrink: 0,
+                                            objectFit: "cover",
+                                            border: `2px solid ${agentConfig.color}`,
+                                        }}
+                                        onError={(e) => {
+                                            e.currentTarget.style.display = "none";
+                                        }}
+                                    />
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "8px",
+                                                marginBottom: "6px",
+                                                flexWrap: "wrap",
+                                            }}
+                                        >
+                                            <span
                                                 style={{
-                                                    background: "#1B2A3D",
-                                                    padding: "8px",
-                                                    borderRadius: "4px",
-                                                    fontSize: "12px",
-                                                    overflow: "auto",
-                                                    margin: "4px 0 0 0",
-                                                    border: "1px solid #2A476C",
-                                                    color: "#E8EAED",
+                                                    fontSize: "13px",
+                                                    fontWeight: 600,
+                                                    color: agentConfig.color,
                                                 }}
                                             >
-                                                {JSON.stringify(event.Payload, null, 2)}
-                                            </pre>
-                                        </div>
-                                    ) : null}
-
-                                    {event.Result ? (
-                                        <div style={{ marginTop: "8px" }}>
-                                            <Button
-                                                appearance="subtle"
-                                                size="small"
-                                                icon={
-                                                    expandedResults.has(event.EventId) ? (
-                                                        <ChevronDownRegular />
-                                                    ) : (
-                                                        <ChevronRightRegular />
-                                                    )
-                                                }
-                                                onClick={() => toggleResult(event.EventId)}
+                                                {agentConfig.displayName}
+                                            </span>
+                                            <span
+                                                style={{
+                                                    fontSize: "11px",
+                                                    color: "#9AA0A6",
+                                                }}
                                             >
-                                                Result
-                                            </Button>
-                                            {expandedResults.has(event.EventId) ? (
-                                                <pre
-                                                    style={{
-                                                        background: "#1B2A3D",
-                                                        padding: "8px",
-                                                        borderRadius: "4px",
-                                                        fontSize: "12px",
-                                                        overflow: "auto",
-                                                        margin: "4px 0 0 0",
-                                                        border: "1px solid #2A476C",
-                                                        color: "#E8EAED",
-                                                    }}
-                                                >
-                                                    {JSON.stringify(event.Result, null, 2)}
-                                                </pre>
-                                            ) : null}
+                                                {timestamp}
+                                            </span>
+                                            {event.Duration && (
+                                                <Badge appearance="tint" size="small" color="warning">
+                                                    {formatDuration(event.Duration)}
+                                                </Badge>
+                                            )}
                                         </div>
-                                    ) : null}
+                                        <div
+                                            style={{
+                                                background: "#16212D",
+                                                padding: "10px 12px",
+                                                borderRadius: "8px",
+                                                border: `1px solid ${agentConfig.color}`,
+                                                color: "#E8EAED",
+                                                fontSize: "13px",
+                                            }}
+                                        >
+                                            {(event.TargetType === TargetType.Tool || event.TargetType === "Tool" || event.TargetType === 0) && (
+                                                <ToolEventMessage
+                                                    event={event}
+                                                    expandedPayloads={expandedPayloads}
+                                                    expandedResults={expandedResults}
+                                                    togglePayload={togglePayload}
+                                                    toggleResult={toggleResult}
+                                                />
+                                            )}
+                                            {(event.TargetType === TargetType.Agent || event.TargetType === "Agent" || event.TargetType === 1) && (
+                                                <AgentEventMessage
+                                                    event={event}
+                                                    expandedPayloads={expandedPayloads}
+                                                    expandedResults={expandedResults}
+                                                    togglePayload={togglePayload}
+                                                    toggleResult={toggleResult}
+                                                />
+                                            )}
+                                            {(event.TargetType === TargetType.SimulatedResponse || event.TargetType === "SimulatedResponse" || event.TargetType === 2) && (
+                                                <SimulatedResponseEventMessage event={event} />
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                            </Card>
-                        ))
+                            );
+                        })
                     )}
                 </div>
             </div>
         </div>
     );
 }
-
