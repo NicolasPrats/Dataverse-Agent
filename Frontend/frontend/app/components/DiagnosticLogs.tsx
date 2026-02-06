@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Badge, Caption1, Text } from "@fluentui/react-components";
+import { Badge, Caption1, Text, ToggleButton } from "@fluentui/react-components";
 import { CircleFilled } from "@fluentui/react-icons";
 import { getAgentConfig } from "../config/agentConfig";
 import { ToolEventMessage } from "./diagnostic/ToolEventMessage";
@@ -26,10 +26,11 @@ interface AgentDiagnosticEvent {
 }
 
 export default function DiagnosticLogs() {
-    const [events, setEvents] = useState<AgentDiagnosticEvent[]>([]);
-    const [isConnected, setIsConnected] = useState(false);
-    const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
-    const [expandedPayloads, setExpandedPayloads] = useState<Set<string>>(new Set());
+const [events, setEvents] = useState<AgentDiagnosticEvent[]>([]);
+const [isConnected, setIsConnected] = useState(false);
+const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
+const [expandedPayloads, setExpandedPayloads] = useState<Set<string>>(new Set());
+const [isChatOnlyMode, setIsChatOnlyMode] = useState(false);
 
     useEffect(() => {
         const eventSource = new EventSource("/api/diagnostics");
@@ -119,13 +120,22 @@ export default function DiagnosticLogs() {
                 <Text size={500} weight="semibold">
                     Diagnostic Logs
                 </Text>
-                <Badge
-                    appearance="filled"
-                    color={isConnected ? "success" : "danger"}
-                    icon={<CircleFilled />}
-                >
-                    {isConnected ? "Connected" : "Disconnected"}
-                </Badge>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <ToggleButton
+                        checked={isChatOnlyMode}
+                        onClick={() => setIsChatOnlyMode(!isChatOnlyMode)}
+                        size="small"
+                    >
+                        {isChatOnlyMode ? "Chat only" : "Details"}
+                    </ToggleButton>
+                    <Badge
+                        appearance="filled"
+                        color={isConnected ? "success" : "danger"}
+                        icon={<CircleFilled />}
+                    >
+                        {isConnected ? "Connected" : "Disconnected"}
+                    </Badge>
+                </div>
             </div>
 
             <div style={{ flex: 1, overflow: "auto", minHeight: 0 }}>
@@ -135,7 +145,15 @@ export default function DiagnosticLogs() {
                             <Caption1>Waiting for logs...</Caption1>
                         </div>
                     ) : (
-                        events.map((event) => {
+                        events
+                            .filter(event => {
+                                if (!isChatOnlyMode) return true;
+                                const targetType = event.TargetType as any;
+                                return targetType !== TargetType.Tool && 
+                                       targetType !== "Tool" && 
+                                       targetType !== 0;
+                            })
+                            .map((event) => {
                             const agentConfig = getAgentConfig(event.SourceAgent);
                             const timestamp = new Date(event.Timestamp).toLocaleString("fr-FR", {
                                 hour: "2-digit",
@@ -211,7 +229,7 @@ export default function DiagnosticLogs() {
                                                 fontSize: "13px",
                                             }}
                                         >
-                                            {(event.TargetType === TargetType.Tool || event.TargetType === "Tool" || event.TargetType === 0) && (
+                                            {((event.TargetType as any) === TargetType.Tool || (event.TargetType as any) === "Tool" || (event.TargetType as any) === 0) && (
                                                 <ToolEventMessage
                                                     event={event}
                                                     expandedPayloads={expandedPayloads}
@@ -220,16 +238,17 @@ export default function DiagnosticLogs() {
                                                     toggleResult={toggleResult}
                                                 />
                                             )}
-                                            {(event.TargetType === TargetType.Agent || event.TargetType === "Agent" || event.TargetType === 1) && (
+                                            {((event.TargetType as any) === TargetType.Agent || (event.TargetType as any) === "Agent" || (event.TargetType as any) === 1) && (
                                                 <AgentEventMessage
                                                     event={event}
                                                     expandedPayloads={expandedPayloads}
                                                     expandedResults={expandedResults}
                                                     togglePayload={togglePayload}
                                                     toggleResult={toggleResult}
+                                                    showDetails={!isChatOnlyMode}
                                                 />
                                             )}
-                                            {(event.TargetType === TargetType.SimulatedResponse || event.TargetType === "SimulatedResponse" || event.TargetType === 2) && (
+                                            {((event.TargetType as any) === TargetType.SimulatedResponse || (event.TargetType as any) === "SimulatedResponse" || (event.TargetType as any) === 2) && (
                                                 <SimulatedResponseEventMessage event={event} />
                                             )}
                                         </div>

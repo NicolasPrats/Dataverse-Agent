@@ -13,6 +13,7 @@ interface AgentEventMessageProps {
     expandedResults: Set<string>;
     togglePayload: (eventId: string) => void;
     toggleResult: (eventId: string) => void;
+    showDetails?: boolean;
 }
 
 export function AgentEventMessage({ 
@@ -20,7 +21,8 @@ export function AgentEventMessage({
     expandedPayloads, 
     expandedResults, 
     togglePayload, 
-    toggleResult 
+    toggleResult,
+    showDetails = true
 }: AgentEventMessageProps) {
     const request = (event.Payload as any)?.Arguments?.request;
 
@@ -45,7 +47,7 @@ export function AgentEventMessage({
                 )}
             </div>
 
-            {event.Payload && (
+            {event.Payload && showDetails && (
                 <div style={{ marginBottom: event.Result ? "1px" : "0" }}>
                     <Button
                         appearance="subtle"
@@ -82,7 +84,7 @@ export function AgentEventMessage({
                 </div>
             )}
 
-            {event.Result && (
+            {event.Result && showDetails && (
                 <div>
                     <Button
                         appearance="subtle"

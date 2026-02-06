@@ -1,23 +1,24 @@
 "use client";
 
-import { Message } from "@copilotkit/runtime-client-gql";
 import { Markdown } from "@copilotkit/react-ui";
 
 interface MessageProps {
-    message: Message;
+    message?: any;
     inProgress?: boolean;
 }
 
 export function CustomAssistantMessage({ message, inProgress = false }: MessageProps) {
-    const timestamp = new Date(message.createdAt || Date.now()).toLocaleString("fr-FR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+    if (!message) return null;
+const timestamp = new Date(message.createdAt || Date.now()).toLocaleString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+});
 
-    const isEmpty = !message.content || message.content.trim().length === 0;
+const messageContent = (message as any).content || "";
+const isEmpty = !messageContent || messageContent.trim().length === 0;
     if (isEmpty && !inProgress) {
         return null;
     }
@@ -86,10 +87,10 @@ export function CustomAssistantMessage({ message, inProgress = false }: MessageP
                         opacity: inProgress ? 0.7 : 1,
                     }}
                 >
-                    {isEmpty && inProgress ? (
+                    {isEmpty ? (
                         <span style={{ color: "#9AA0A6", fontStyle: "italic" }}>Thinking...</span>
                     ) : (
-                        <Markdown content={message.content} />
+                        <Markdown content={messageContent} />
                     )}
                 </div>
             </div>
@@ -98,17 +99,19 @@ export function CustomAssistantMessage({ message, inProgress = false }: MessageP
 }
 
 export function CustomUserMessage({ message }: MessageProps) {
-    const timestamp = new Date(message.createdAt || Date.now()).toLocaleString("fr-FR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+if (!message) return null;
+const timestamp = new Date(message.createdAt || Date.now()).toLocaleString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+});
 
-    if (!message.content?.trim()) {
-        return null;
-    }
+const messageContent = (message as any).content || "";
+if (!messageContent.trim()) {
+    return null;
+}
 
     return (
         <div
@@ -173,7 +176,7 @@ export function CustomUserMessage({ message }: MessageProps) {
                         wordWrap: "break-word",
                     }}
                 >
-                    <Markdown content={message.content} />
+                    <Markdown content={messageContent} />
                 </div>
             </div>
         </div>
