@@ -39,6 +39,8 @@ textarea::placeholder {
 .copilotKitMessages {
     background-color: var(--copilot-kit-background-color) !important;
     padding: 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
 }
 
 .copilotKitMessage {
@@ -47,17 +49,27 @@ textarea::placeholder {
     border: 1px solid var(--copilot-kit-border-color) !important;
     padding: 12px 16px !important;
     margin: 8px 0 !important;
-    border-radius: 8px !important;
+    border-radius: 12px !important;
+    max-width: 75% !important;
+    width: fit-content !important;
+    word-wrap: break-word !important;
+    align-self: flex-start !important;
 }
 
 .copilotKitMessage.user {
-    background-color: #1B2A3D !important;
+    background-color: var(--copilot-kit-primary-color) !important;
+    color: white !important;
     padding: 12px 16px !important;
+    align-self: flex-end !important;
+    border: none !important;
+    border-radius: 12px !important;
 }
 
 .copilotKitMessage.assistant {
     background-color: var(--copilot-kit-secondary-color) !important;
     padding: 12px 16px !important;
+    align-self: flex-start !important;
+    border-radius: 12px !important;
 }
 
 .copilotKitInput,
@@ -134,6 +146,34 @@ div[class*="input"] textarea {
     color: #7CAEED !important;
 }
 
+/* Specific styles for user messages - aligned right with blue background */
+.copilotKitUserMessage {
+    background-color: var(--copilot-kit-primary-color) !important;
+    color: white !important;
+    align-self: flex-end !important;
+    border: none !important;
+    padding: 12px 16px !important;
+    margin: 8px 0 !important;
+    border-radius: 12px !important;
+    max-width: 75% !important;
+    width: fit-content !important;
+    word-wrap: break-word !important;
+}
+
+/* Specific styles for assistant messages - aligned left */
+.copilotKitAssistantMessage {
+    background-color: var(--copilot-kit-secondary-color) !important;
+    color: var(--copilot-kit-text-color) !important;
+    align-self: flex-start !important;
+    border: 1px solid var(--copilot-kit-border-color) !important;
+    padding: 12px 16px !important;
+    margin: 8px 0 !important;
+    border-radius: 12px !important;
+    max-width: 75% !important;
+    width: fit-content !important;
+    word-wrap: break-word !important;
+}
+
 /* Additional catch-all for any missed inputs */
 * input[type="text"],
 * input[type="search"],
@@ -144,4 +184,3 @@ div[class*="input"] textarea {
 cpk-web-inspector {
     display: none !important;
 }
-
