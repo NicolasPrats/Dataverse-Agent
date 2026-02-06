@@ -45,9 +45,5 @@
     <PackageReference Include="Microsoft.PowerPlatform.Dataverse.Client" Version="1.2.10" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Tests\" />
-  </ItemGroup>
-
 
 </Project>

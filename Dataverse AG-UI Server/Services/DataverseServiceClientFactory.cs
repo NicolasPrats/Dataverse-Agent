@@ -1,8 +1,8 @@
 using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk.Query;
-using TestAgentFramework.Model;
+using Dataverse_AG_UI_Server.Model;
 
-namespace TestAgentFramework.Services;
+namespace Dataverse_AG_UI_Server.Services;
 
 /// <summary>
 /// Factory for creating and configuring Dataverse ServiceClient instances.

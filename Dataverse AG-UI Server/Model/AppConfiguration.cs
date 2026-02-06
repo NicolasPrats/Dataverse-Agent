@@ -1,4 +1,4 @@
-namespace TestAgentFramework.Model;
+namespace Dataverse_AG_UI_Server.Model;
 
 public class AppConfiguration
 {

@@ -2,8 +2,8 @@ using Microsoft.Crm.Sdk.Messages;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
-using TestAgentFramework.Model;
-using TestAgentFramework.Services;
+using Dataverse_AG_UI_Server.Model;
+using Dataverse_AG_UI_Server.Services;
 
 namespace Dataverse_AG_UI_Server.Agents.Tools;
 
@@ -22,10 +22,7 @@ public abstract class DataverseToolsBase
 
     protected DataverseToolsBase(DataverseServiceClientFactory serviceClientFactory)
     {
-        if (serviceClientFactory == null)
-        {
-            throw new ArgumentNullException(nameof(serviceClientFactory));
-        }
+        ArgumentNullException.ThrowIfNull(serviceClientFactory);
 
         ServiceClient = serviceClientFactory.GetServiceClient();
         BaseLcid = serviceClientFactory.GetBaseLcid();
@@ -131,7 +128,7 @@ public abstract class DataverseToolsBase
     /// <param name="componentType">The type of the component.</param>
     protected void AddComponentToSolution(Guid componentId, SolutionComponentType componentType)
     {
-        var solutionId = EnsureSolutionExists();
+        EnsureSolutionExists();
 
         var request = new AddSolutionComponentRequest
         {

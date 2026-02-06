@@ -3,7 +3,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Schema;
 
-namespace TestAgentFramework.Agents.Tools.Tools;
+namespace Dataverse_AG_UI_Server.Agents.Tools.Tools;
 
 /// <summary>
 /// Validates Dataverse XML schemas (FormXML, FetchXML, LayoutXML)

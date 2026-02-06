@@ -1,6 +1,6 @@
 using Microsoft.Agents.AI;
 
-namespace TestAgentFramework.Agents.Base;
+namespace Dataverse_AG_UI_Server.Agents.Base;
 
 public interface IAgent
 {

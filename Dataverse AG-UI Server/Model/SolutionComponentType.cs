@@ -1,4 +1,4 @@
-namespace TestAgentFramework.Model;
+namespace Dataverse_AG_UI_Server.Model;
 
 /// <summary>
 /// Represents the types of components that can be added to a Dataverse solution.

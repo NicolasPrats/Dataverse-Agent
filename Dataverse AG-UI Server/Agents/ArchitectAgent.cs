@@ -1,12 +1,12 @@
-﻿using TestAgentFramework.Agents.Base;
-using TestAgentFramework.Services;
+﻿using Dataverse_AG_UI_Server.Agents.Base;
+using Dataverse_AG_UI_Server.Agents.Tools;
+using Dataverse_AG_UI_Server.Diagnostics;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
-using TestAgentFramework.Agents.Tools.Tools;
-using Dataverse_AG_UI_Server.Agents.Tools;
 using System.ComponentModel;
 
-namespace TestAgentFramework.Agents;
+
+namespace Dataverse_AG_UI_Server.Agents;
 
 public class ArchitectAgent : AgentBase
 {
@@ -83,96 +83,34 @@ No hidden assumptions—state assumptions explicitly.
 Provide at least one implementation option per custom feature with pros/cons and decision justification.
 ";
 
-    private readonly DataModelBuilderAgent? _dataModelBuilderAgent;
-    private readonly UIBuilderAgent? _uiBuilderAgent;
-    private readonly DataverseDataModelTools? _dataModelTools;
-    private readonly DataverseUITools? _uiTools;
+    private readonly DataModelBuilderAgent _dataModelBuilderAgent;
+    private readonly UIBuilderAgent _uiBuilderAgent;
+    private readonly DataverseDataModelTools _dataModelTools;
+    private readonly DataverseUITools _uiTools;
 
     public ArchitectAgent(
-        DataModelBuilderAgent? dataModelBuilderAgent = null, 
-        UIBuilderAgent? uiBuilderAgent = null,
-        DataverseDataModelTools? dataModelTools = null,
-        DataverseUITools? uiTools = null)
-        : base("Architect", DefaultInstructions)
+        IDiagnosticBus diagBus,
+        DataModelBuilderAgent dataModelBuilderAgent,
+        UIBuilderAgent uiBuilderAgent,
+        DataverseDataModelTools dataModelTools,
+        DataverseUITools uiTools)
+        : base(diagBus, "Architect", DefaultInstructions)
     {
         _dataModelBuilderAgent = dataModelBuilderAgent;
         _uiBuilderAgent = uiBuilderAgent;
         _dataModelTools = dataModelTools;
         _uiTools = uiTools;
+
+        base.AddTools(_dataModelTools.ReadOnlyTools);
+        base.AddTools(_uiTools.ReadOnlyTools);
+        base.AddAgentTool(_dataModelBuilderAgent, "transfer_to_datamodel_builder", "Transfer the conversation to the Data Model Builder Agent to CREATE or MODIFY the data model (create tables, add columns, create relationships, option sets). Do NOT use this for reading data model - use the direct read tools instead.");
+        base.AddAgentTool(_uiBuilderAgent, "transfer_to_ui_builder", "Transfer the conversation to the UI Builder Agent to CREATE or MODIFY user interface components (create/update forms, create/update views, design layouts). Do NOT use this for reading UI components - use the direct read tools instead.");
+
+
     }
 
-    [Description("Transfer the conversation to the Data Model Builder Agent to CREATE or MODIFY the data model (create tables, add columns, create relationships, option sets). Do NOT use this for reading data model - use the direct read tools instead.")]
-    private async Task<string> TransferToDataModelBuilderAsync(
-        [Description("The request to send to the Data Model Builder Agent")] string request)
-    {
-        if (_dataModelBuilderAgent == null)
-        {
-            return "Error: Data Model Builder Agent is not available. Cannot transfer the conversation.";
-        }
 
-        try
-        {
-            var result = await _dataModelBuilderAgent.RunAsync(request);
-            return $"Data Model Builder Agent response:\n{result}";
-        }
-        catch (Exception ex)
-        {
-            return $"Error transferring to Data Model Builder Agent: {ex.Message}";
-        }
-    }
 
-    [Description("Transfer the conversation to the UI Builder Agent to CREATE or MODIFY user interface components (create/update forms, create/update views, design layouts). Do NOT use this for reading UI components - use the direct read tools instead.")]
-    private async Task<string> TransferToUIBuilderAsync(
-        [Description("The request to send to the UI Builder Agent")] string request)
-    {
-        if (_uiBuilderAgent == null)
-        {
-            return "Error: UI Builder Agent is not available. Cannot transfer the conversation.";
-        }
-
-        try
-        {
-            var result = await _uiBuilderAgent.RunAsync(request);
-            return $"UI Builder Agent response:\n{result}";
-        }
-        catch (Exception ex)
-        {
-            return $"Error transferring to UI Builder Agent: {ex.Message}";
-        }
-    }
-
-    protected override AIAgent BuildAgent(IChatClient chatClient)
-    {
-        var tools = new List<AIFunction>();
-
-        // Add read-only tools for direct access to data model and UI information
-        if (_dataModelTools != null)
-        {
-            tools.AddRange(_dataModelTools.ReadOnlyTools);
-        }
-
-        if (_uiTools != null)
-        {
-            tools.AddRange(_uiTools.ReadOnlyTools);
-        }
-
-        // Add transfer tools if agents are available
-        if (_dataModelBuilderAgent != null)
-        {
-            tools.Add(AIFunctionFactory.Create(TransferToDataModelBuilderAsync, "transfer_to_datamodel_builder"));
-        }
-
-        if (_uiBuilderAgent != null)
-        {
-            tools.Add(AIFunctionFactory.Create(TransferToUIBuilderAsync, "transfer_to_ui_builder"));
-        }
-
-        return chatClient.AsAIAgent(
-            instructions: Instructions,
-            name: Name,
-            tools: [.. tools]
-        );
-    }
 }
 
 

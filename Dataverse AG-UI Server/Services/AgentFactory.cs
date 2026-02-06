@@ -1,13 +1,12 @@
-using Microsoft.Extensions.AI;
-using TestAgentFramework.Agents;
-using TestAgentFramework.Agents.Base;
-using TestAgentFramework.Agents.Tools.Tools;
-using TestAgentFramework.Model;
+using Dataverse_AG_UI_Server.Agents;
 using Dataverse_AG_UI_Server.Agents.Tools;
+using Dataverse_AG_UI_Server.Diagnostics;
+using Dataverse_AG_UI_Server.Model;
+using Dataverse_AG_UI_Server.Services;
 
-namespace TestAgentFramework.Services;
+namespace Dataverse_AG_UI_Server.Services;
 
-public class AgentFactory(AppConfiguration config, IChatClientFactory chatClientFactory, DataverseServiceClientFactory serviceClientFactory)
+public class AgentFactory(IDiagnosticBus diagBus, AppConfiguration config, IChatClientFactory chatClientFactory, DataverseServiceClientFactory serviceClientFactory)
 {
     private readonly AppConfiguration _config = config ?? throw new ArgumentNullException(nameof(config));
     private readonly IChatClientFactory _chatClientFactory = chatClientFactory ?? throw new ArgumentNullException(nameof(chatClientFactory));
@@ -16,7 +15,7 @@ public class AgentFactory(AppConfiguration config, IChatClientFactory chatClient
     public DataModelBuilderAgent CreateDataModelBuilderAgent()
     {
         var dataModelTools = new DataverseDataModelTools(_serviceClientFactory);
-        var agent = new DataModelBuilderAgent(dataModelTools);
+        var agent = new DataModelBuilderAgent(diagBus, dataModelTools);
         agent.Initialize(_chatClientFactory.CreateChatClient());
         return agent;
     }
@@ -24,7 +23,7 @@ public class AgentFactory(AppConfiguration config, IChatClientFactory chatClient
     public UIBuilderAgent CreateUIBuilderAgent()
     {
         var uiTools = new DataverseUITools(_serviceClientFactory);
-        var agent = new UIBuilderAgent(uiTools);
+        var agent = new UIBuilderAgent(diagBus, uiTools);
         agent.Initialize(_chatClientFactory.CreateChatClient());
         return agent;
     }
@@ -40,6 +39,7 @@ public class AgentFactory(AppConfiguration config, IChatClientFactory chatClient
         var uiBuilderAgent = CreateUIBuilderAgent();
         
         var agent = new ArchitectAgent(
+            diagBus,
             dataModelBuilderAgent, 
             uiBuilderAgent,
             dataModelTools,

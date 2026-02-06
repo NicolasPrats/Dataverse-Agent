@@ -9,9 +9,10 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
-using TestAgentFramework.Model;
-using TestAgentFramework.Services;
-using TestAgentFramework.Agents.Tools.Tools;
+using Dataverse_AG_UI_Server.Model;
+using Dataverse_AG_UI_Server.Services;
+using Dataverse_AG_UI_Server.Agents.Tools.Tools;
+using Dataverse_AG_UI_Server.Agents.Base;
 
 namespace Dataverse_AG_UI_Server.Agents.Tools
 {
@@ -35,38 +36,38 @@ namespace Dataverse_AG_UI_Server.Agents.Tools
         }
 
         // Individual tool properties - allows selective tool usage
-        public AIFunction GetViewsToolAsync =>
-            AIFunctionFactory.Create(GetViewsAsync, GetViews);
+        public Tool GetViewsToolAsync =>
+            new(GetViews, GetViewsAsync);
 
-        public AIFunction CreateViewToolAsync =>
-            AIFunctionFactory.Create(CreateViewAsync, CreateView);
+        public Tool CreateViewToolAsync =>
+            new(CreateView, CreateViewAsync);
 
-        public AIFunction UpdateViewToolAsync =>
-            AIFunctionFactory.Create(UpdateViewAsync, UpdateView);
+        public Tool UpdateViewToolAsync =>
+            new(UpdateView, UpdateViewAsync);
 
-        public AIFunction GetFormsToolAsync =>
-            AIFunctionFactory.Create(GetFormsAsync, GetForms);
+        public Tool GetFormsToolAsync =>
+            new(GetForms, GetFormsAsync);
 
-        public AIFunction CreateFormToolAsync =>
-            AIFunctionFactory.Create(CreateFormAsync, CreateForm);
+        public Tool CreateFormToolAsync =>
+            new(CreateForm, CreateFormAsync);
 
-        public AIFunction UpdateFormToolAsync =>
-            AIFunctionFactory.Create(UpdateFormAsync, UpdateForm);
+        public Tool UpdateFormToolAsync =>
+            new(UpdateForm, UpdateFormAsync);
 
-        public AIFunction ValidateFormXmlToolAsync =>
-            AIFunctionFactory.Create(ValidateFormXmlAsync, ValidateFormXml);
+        public Tool ValidateFormXmlToolAsync =>
+            new(ValidateFormXml, ValidateFormXmlAsync);
 
-        public AIFunction ValidateFetchXmlToolAsync =>
-            AIFunctionFactory.Create(ValidateFetchXmlAsync, ValidateFetchXml);
+        public Tool ValidateFetchXmlToolAsync =>
+            new(ValidateFetchXml, ValidateFetchXmlAsync);
 
-        public AIFunction ValidateLayoutXmlToolAsync =>
-            AIFunctionFactory.Create(ValidateLayoutXmlAsync, ValidateLayoutXml);
+        public Tool ValidateLayoutXmlToolAsync =>
+            new(ValidateLayoutXml, ValidateLayoutXmlAsync);
 
         // Grouped tools for easy access
         /// <summary>
         /// All read-only tools for querying UI components and validating XML
         /// </summary>
-        public AIFunction[] ReadOnlyTools =>
+        public Tool[] ReadOnlyTools =>
         [
             GetViewsToolAsync,
             GetFormsToolAsync
@@ -75,7 +76,7 @@ namespace Dataverse_AG_UI_Server.Agents.Tools
         /// <summary>
         /// All write tools for creating/modifying UI components
         /// </summary>
-        public AIFunction[] WriteTools =>
+        public Tool[] WriteTools =>
         [
             CreateViewToolAsync,
             UpdateViewToolAsync,
@@ -89,7 +90,7 @@ namespace Dataverse_AG_UI_Server.Agents.Tools
         /// <summary>
         /// All tools (read + write + validation)
         /// </summary>
-        public AIFunction[] AllTools =>
+        public Tool[] AllTools =>
         [
             .. ReadOnlyTools,
             .. WriteTools
@@ -492,7 +493,7 @@ namespace Dataverse_AG_UI_Server.Agents.Tools
 
         #region Helper Methods
 
-        private string GetFormTypeName(int formType)
+        private static string GetFormTypeName(int formType)
         {
             return formType switch
             {

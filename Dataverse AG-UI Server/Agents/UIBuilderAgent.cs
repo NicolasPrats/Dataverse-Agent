@@ -1,10 +1,10 @@
-using TestAgentFramework.Agents.Base;
-using TestAgentFramework.Services;
+using Dataverse_AG_UI_Server.Agents.Base;
+using Dataverse_AG_UI_Server.Agents.Tools;
+using Dataverse_AG_UI_Server.Diagnostics;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
-using Dataverse_AG_UI_Server.Agents.Tools;
 
-namespace TestAgentFramework.Agents;
+namespace Dataverse_AG_UI_Server.Agents;
 
 public class UIBuilderAgent : AgentBase
 {
@@ -78,18 +78,11 @@ Best Practices:
 
     private readonly DataverseUITools _dataverseUITools;
 
-    public UIBuilderAgent(DataverseUITools dataverseUITools)
-        : base("UIBuilder", DefaultInstructions)
+    public UIBuilderAgent(IDiagnosticBus diagBus, DataverseUITools dataverseUITools)
+        : base(diagBus, "UIBuilder", DefaultInstructions)
     {
-        _dataverseUITools = dataverseUITools ?? throw new ArgumentNullException(nameof(dataverseUITools));
+        _dataverseUITools = dataverseUITools;
+        base.AddTools(dataverseUITools.AllTools);
     }
 
-    protected override AIAgent BuildAgent(IChatClient chatClient)
-    {
-        return chatClient.AsAIAgent(
-            instructions: Instructions,
-            name: Name,
-            tools: _dataverseUITools.AllTools
-        );
-    }
 }

@@ -9,8 +9,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
-using TestAgentFramework.Model;
-using TestAgentFramework.Services;
+using Dataverse_AG_UI_Server.Model;
+using Dataverse_AG_UI_Server.Services;
+using Dataverse_AG_UI_Server.Agents.Base;
 
 namespace Dataverse_AG_UI_Server.Agents.Tools
 {
@@ -35,47 +36,47 @@ namespace Dataverse_AG_UI_Server.Agents.Tools
         }
 
         // Individual tool properties - allows selective tool usage
-        public AIFunction GetTablesToolAsync => 
-            AIFunctionFactory.Create(GetTablesAsync, GetTables);
+        public Tool GetTablesToolAsync => 
+            new(GetTables, GetTablesAsync);
 
-        public AIFunction GetTableMetadataToolAsync => 
-            AIFunctionFactory.Create(GetTableMetadataAsync, GetTableMetadata);
+        public Tool GetTableMetadataToolAsync => 
+            new(GetTableMetadata, GetTableMetadataAsync);
 
-        public AIFunction GetAttributesToolAsync => 
-            AIFunctionFactory.Create(GetAttributesAsync, GetAttributes);
+        public Tool GetAttributesToolAsync => 
+            new(GetAttributes, GetAttributesAsync);
 
-        public AIFunction GetRelationshipsToolAsync => 
-            AIFunctionFactory.Create(GetRelationshipsAsync, GetRelationships);
+        public Tool GetRelationshipsToolAsync => 
+            new(GetRelationships, GetRelationshipsAsync);
 
-        public AIFunction GetGlobalOptionSetsToolAsync => 
-            AIFunctionFactory.Create(GetGlobalOptionSetsAsync, GetGlobalOptionSets);
+        public Tool GetGlobalOptionSetsToolAsync => 
+            new(GetGlobalOptionSets, GetGlobalOptionSetsAsync);
 
-        public AIFunction GetGlobalOptionSetDetailsToolAsync => 
-            AIFunctionFactory.Create(GetGlobalOptionSetDetailsAsync, GetGlobalOptionSetDetails);
+        public Tool GetGlobalOptionSetDetailsToolAsync => 
+            new(GetGlobalOptionSetDetails, GetGlobalOptionSetDetailsAsync);
 
-        public AIFunction CreateTableToolAsync =>
-             AIFunctionFactory.Create(CreateTableAsync, CreateTable);
+        public Tool CreateTableToolAsync =>
+             new(CreateTable, CreateTableAsync);
 
-        public AIFunction CreateAttributeToolAsync => 
-             AIFunctionFactory.Create(CreateAttributeAsync, CreateAttribute);
+        public Tool CreateAttributeToolAsync => 
+             new(CreateAttribute, CreateAttributeAsync);
 
-        public AIFunction CreateGlobalOptionSetToolAsync => 
-             AIFunctionFactory.Create(CreateGlobalOptionSetAsync, CreateGlobalOptionSet);
+        public Tool CreateGlobalOptionSetToolAsync => 
+             new(CreateGlobalOptionSet, CreateGlobalOptionSetAsync);
 
-        public AIFunction UpdateOptionSetToolAsync =>
-             AIFunctionFactory.Create(UpdateOptionSetAsync, UpdateOptionSet);
+        public Tool UpdateOptionSetToolAsync =>
+             new(UpdateOptionSet, UpdateOptionSetAsync);
 
-        public AIFunction CreateOneToManyRelationshipToolAsync =>
-             AIFunctionFactory.Create(CreateOneToManyRelationshipAsync, CreateOneToManyRelationship);
+        public Tool CreateOneToManyRelationshipToolAsync =>
+             new(CreateOneToManyRelationship, CreateOneToManyRelationshipAsync);
 
-        public AIFunction CreateManyToManyRelationshipToolAsync =>
-            AIFunctionFactory.Create(CreateManyToManyRelationshipAsync, CreateManyToManyRelationship);
+        public Tool CreateManyToManyRelationshipToolAsync =>
+            new(CreateManyToManyRelationship, CreateManyToManyRelationshipAsync);
 
         // Grouped tools for easy access
         /// <summary>
         /// All read-only tools for querying data model information
         /// </summary>
-        public AIFunction[] ReadOnlyTools => 
+        public Tool[] ReadOnlyTools => 
         [
             GetTablesToolAsync,
             GetTableMetadataToolAsync,
@@ -88,7 +89,7 @@ namespace Dataverse_AG_UI_Server.Agents.Tools
         /// <summary>
         /// All write tools for creating/modifying data model
         /// </summary>
-        public AIFunction[] WriteTools => 
+        public Tool[] WriteTools => 
         [
             CreateTableToolAsync,
             CreateAttributeToolAsync,
@@ -101,7 +102,7 @@ namespace Dataverse_AG_UI_Server.Agents.Tools
         /// <summary>
         /// All tools (read + write)
         /// </summary>
-        public AIFunction[] AllTools => 
+        public Tool[] AllTools => 
         [
             .. ReadOnlyTools,
             .. WriteTools
@@ -226,7 +227,7 @@ namespace Dataverse_AG_UI_Server.Agents.Tools
 
                     var attributes = response.EntityMetadata.Attributes.Select(a =>
                     {
-                        var attr = new TestAgentFramework.Model.AttributeMetadata
+                        var attr = new Dataverse_AG_UI_Server.Model.AttributeMetadata
                         {
                             LogicalName = a.LogicalName,
                             SchemaName = a.SchemaName,
@@ -254,12 +255,12 @@ namespace Dataverse_AG_UI_Server.Agents.Tools
                         }
                         else if (a is PicklistAttributeMetadata picklistAttr && picklistAttr.OptionSet != null)
                         {
-                            attr.OptionSet = picklistAttr.OptionSet.Options.Select(o => new TestAgentFramework.Model.OptionMetadata
+                            attr.OptionSet = [.. picklistAttr.OptionSet.Options.Select(o => new Dataverse_AG_UI_Server.Model.OptionMetadata
                             {
                                 Value = o.Value ?? 0,
                                 Label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty,
                                 Description = o.Description?.UserLocalizedLabel?.Label
-                            }).ToList();
+                            })];
                         }
 
                         return attr;
@@ -724,7 +725,7 @@ namespace Dataverse_AG_UI_Server.Agents.Tools
                 try
                 {
                     var options = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, int>>(optionsJson);
-                    if (options == null || !options.Any())
+                    if (options == null || options.Count == 0)
                     {
                         throw new ArgumentException("Options cannot be empty");
                     }

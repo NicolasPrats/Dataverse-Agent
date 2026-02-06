@@ -1,6 +1,6 @@
-using TestAgentFramework.Agents.Base;
+using Dataverse_AG_UI_Server.Agents.Base;
 
-namespace TestAgentFramework.Services;
+namespace Dataverse_AG_UI_Server.Services;
 
 public class AgentOrchestrator
 {

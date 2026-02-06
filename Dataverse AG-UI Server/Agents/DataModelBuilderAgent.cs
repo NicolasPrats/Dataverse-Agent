@@ -1,10 +1,11 @@
-using TestAgentFramework.Agents.Base;
-using TestAgentFramework.Services;
+using Dataverse_AG_UI_Server.Agents.Base;
+using Dataverse_AG_UI_Server.Agents.Tools;
+using Dataverse_AG_UI_Server.Diagnostics;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
-using Dataverse_AG_UI_Server.Agents.Tools;
+using System.ComponentModel;
 
-namespace TestAgentFramework.Agents;
+namespace Dataverse_AG_UI_Server.Agents;
 
 public class DataModelBuilderAgent : AgentBase
 {
@@ -78,24 +79,14 @@ IMPORTANT: when the user is talking about a table, he may give the display name 
 
     private DataverseDataModelTools DataverseAgentTools { get; }
 
-    public DataModelBuilderAgent(DataverseDataModelTools dataverseAgentTools)
-        : base("DataModelBuilder", DefaultInstructions)
+    public DataModelBuilderAgent(IDiagnosticBus diagBus,DataverseDataModelTools dataverseAgentTools)
+        : base(diagBus, "DataModelBuilder", DefaultInstructions)
     {
         DataverseAgentTools = dataverseAgentTools;
+        base.AddTools(DataverseAgentTools.AllTools);
     }
 
-
-
-    protected override AIAgent BuildAgent(IChatClient chatClient)
-    {
-
-        return chatClient.AsAIAgent(
-            instructions: Instructions,
-            name: Name,
-            tools: DataverseAgentTools.AllTools
-        );
-    }
-
+    
 }
 
 
