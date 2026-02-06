@@ -6,6 +6,7 @@ import "@copilotkit/react-ui/styles.css";
 import { useHumanInTheLoop } from "@copilotkit/react-core";
 import DiagnosticLogs from "./components/DiagnosticLogs";
 import ResizablePanel from "./components/ResizablePanel";
+import { CustomAssistantMessage, CustomUserMessage } from "./components/CustomMessage";
 import { Button } from "@fluentui/react-components";
 import { PanelRightRegular, DismissRegular } from "@fluentui/react-icons"
 
@@ -62,6 +63,8 @@ const [isPanelOpen, setIsPanelOpen] = useState(false);
                                 title: "Your Dataverse Assistant",
                                 initial: "Hi! 👋 How can I assist you today?",
                             }}
+                            AssistantMessage={CustomAssistantMessage}
+                            UserMessage={CustomUserMessage}
                         />
                     </div>
                 </div>
