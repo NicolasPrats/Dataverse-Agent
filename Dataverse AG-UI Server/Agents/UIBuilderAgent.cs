@@ -64,9 +64,10 @@ When asked to create UI components:
 2. Check existing views/forms to understand current design
 3. Design the UI structure (fields, sections, tabs, columns)
 4. Generate proper XML (FetchXML, LayoutXML, FormXML)
-5. VALIDATE the XML using the validation tools before creation
-6. Create the component in Dataverse
-7. Verify creation and provide summary
+5. Ensure the column(s) used for the sort are included in the retrieved columns.
+6. VALIDATE the XML using the validation tools before creation
+7. Create the component in Dataverse
+8. Verify creation and provide summary
 
 Best Practices:
 - Start with essential fields only (progressive disclosure)
