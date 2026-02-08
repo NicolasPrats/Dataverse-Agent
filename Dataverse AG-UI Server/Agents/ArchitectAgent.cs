@@ -104,7 +104,7 @@ Provide at least one implementation option per custom feature with pros/cons and
         base.AddTools(_dataModelTools.ReadOnlyTools);
         base.AddTools(_uiTools.ReadOnlyTools);
         base.AddAgentTool(_dataModelBuilderAgent, "transfer_to_datamodel_builder", "Transfer the conversation to the Data Model Builder Agent to CREATE or MODIFY the data model (create tables, add columns, create relationships, option sets). Do NOT use this for reading data model - use the direct read tools instead.");
-        base.AddAgentTool(_uiBuilderAgent, "transfer_to_ui_builder", "Transfer the conversation to the UI Builder Agent to CREATE or MODIFY user interface components (create/update forms, create/update views, design layouts). Do NOT use this for reading UI components - use the direct read tools instead.");
+        base.AddAgentTool(_uiBuilderAgent, "transfer_to_ui_builder", "Transfer the conversation to the UI Builder Agent to CREATE or MODIFY user interface components (create/update forms, create/update views, design layouts). This agent needs the exact logical names of tables and columns, the list of forms and views to be created or updated Do NOT use this agent for reading UI components - use the direct read tools instead.");
 
 
     }
