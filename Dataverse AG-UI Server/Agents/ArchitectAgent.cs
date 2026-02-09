@@ -31,6 +31,8 @@ Use these tools directly when you need to:
 - Review existing global option sets and their values
 - Review existing forms and views
 
+If you need to read any other information about the current environment, you can ask to the handyman agent to retrieve it for you.
+
 When the user wants to implement any new feature, you capture business requirements, assess feasibility, design the solution at a high level.
 Validate with the DataModelBuilder agent the data model and the naming conventions.
 Validate with the UI Builder that he is able to implement what you want.
@@ -57,8 +59,9 @@ Use pro‑code (plugins, PCF, Azure) when needed for robustness, performance, or
 Allow low‑code only when code first options are too complex or costly.
 
 Once user has approved your design, you drive other agents to do the implementation:
-- Transfer to Data Model Builder Agent: For creating/modifying tables, columns, relationships
+- Transfer to Data Model Builder Agent: For creating/modifying tables, columns, relationships, option sets
 - Transfer to UI Builder Agent: For creating/modifying forms, views, dashboards
+- Transfer to Handyman Agent: For reading or updating anything that cannot be done through the other two agents, or for implementing custom logic that requires C# code (e.g., complex data migrations, bulk operations, custom workflows, complex queries).
 When some implementation is needed but cannot be handled by any of the available agents, you can propose to the user to provide him/her detailed design and instructions.
 
 
@@ -73,6 +76,7 @@ Integrations: connectors, APIs, virtual tables, eventing (Dataverse events), rat
 Available Transfer Tools:
 - transfer_to_datamodel_builder: When you need to CREATE or MODIFY the data model (create tables, add columns, create relationships, option sets), transfer the conversation to the Data Model Builder Agent. Use this only for WRITE operations. For READ operations, use your direct tools.
 - transfer_to_ui_builder: When you need to CREATE or MODIFY the user interface (create/update forms, create/update views, design dashboards), transfer the conversation to the UI Builder Agent. Use this only for WRITE operations. For READ operations, use your direct tools. Please ensure to give logical names to the UIBuilderAgent.
+- transfer_to_handyman: When you need to implement CUSTOM LOGIC or SPECIFIC OPERATIONS that cannot be done with the standard data model or UI builders (e.g., bulk data operations, complex queries, custom workflows, data migrations, or any task requiring custom C# code), transfer to the Handyman Agent. This agent can write and execute Dataverse SDK scripts securely. Explain clearly what needs to be done and provide all necessary details (table names, field names, conditions, etc.).
 
 
 
@@ -87,6 +91,7 @@ Provide at least one implementation option per custom feature with pros/cons and
 
     private readonly DataModelBuilderAgent _dataModelBuilderAgent;
     private readonly UIBuilderAgent _uiBuilderAgent;
+    private readonly HandymanAgent _handymanAgent;
     private readonly DataverseDataModelTools _dataModelTools;
     private readonly DataverseUITools _uiTools;
 
@@ -94,12 +99,14 @@ Provide at least one implementation option per custom feature with pros/cons and
         IDiagnosticBus diagBus,
         DataModelBuilderAgent dataModelBuilderAgent,
         UIBuilderAgent uiBuilderAgent,
+        HandymanAgent handymanAgent,
         DataverseDataModelTools dataModelTools,
         DataverseUITools uiTools)
         : base(diagBus, "Architect", DefaultInstructions)
     {
         _dataModelBuilderAgent = dataModelBuilderAgent;
         _uiBuilderAgent = uiBuilderAgent;
+        _handymanAgent = handymanAgent;
         _dataModelTools = dataModelTools;
         _uiTools = uiTools;
 
@@ -107,8 +114,7 @@ Provide at least one implementation option per custom feature with pros/cons and
         base.AddTools(_uiTools.ReadOnlyTools);
         base.AddAgentTool(_dataModelBuilderAgent, "transfer_to_datamodel_builder", "Transfer the conversation to the Data Model Builder Agent to CREATE or MODIFY the data model (create tables, add columns, create relationships, option sets). Do NOT use this for reading data model - use the direct read tools instead.");
         base.AddAgentTool(_uiBuilderAgent, "transfer_to_ui_builder", "Transfer the conversation to the UI Builder Agent to CREATE or MODIFY user interface components (create/update forms, create/update views, design layouts). This agent needs the exact logical names of tables and columns, the list of forms and views to be created or updated Do NOT use this agent for reading UI components - use the direct read tools instead.");
-
-
+        base.AddAgentTool(_handymanAgent, "transfer_to_handyman", "Transfer to the Handyman Agent for implementing custom logic or operations requiring C# code (bulk data operations, complex queries, data migrations, custom workflows). Provide clear instructions on what needs to be done, including table names, field names, conditions, and expected outcomes.");
     }
 
 

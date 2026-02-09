@@ -28,6 +28,14 @@ public class AgentFactory(IDiagnosticBus diagBus, AppConfiguration config, IChat
         return agent;
     }
 
+    public HandymanAgent CreateHandymanAgent()
+    {
+        var scriptTools = new ScriptTools(_serviceClientFactory);
+        var agent = new HandymanAgent(diagBus, scriptTools);
+        agent.Initialize(_chatClientFactory.CreateChatClient());
+        return agent;
+    }
+
     public ArchitectAgent CreateArchitectAgent()
     {
         // Create the tools for direct access
@@ -37,11 +45,13 @@ public class AgentFactory(IDiagnosticBus diagBus, AppConfiguration config, IChat
         // Create the specialized agents that the ArchitectAgent can delegate to
         var dataModelBuilderAgent = CreateDataModelBuilderAgent();
         var uiBuilderAgent = CreateUIBuilderAgent();
+        var handymanAgent = CreateHandymanAgent();
         
         var agent = new ArchitectAgent(
             diagBus,
             dataModelBuilderAgent, 
             uiBuilderAgent,
+            handymanAgent,
             dataModelTools,
             uiTools);
         agent.Initialize(_chatClientFactory.CreateChatClient());

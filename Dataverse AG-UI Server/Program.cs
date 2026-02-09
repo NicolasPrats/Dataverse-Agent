@@ -47,11 +47,13 @@ namespace Dataverse_AG_UI_Server
             var architectAgent = agentFactory.CreateArchitectAgent();
             var dataModelAgent = agentFactory.CreateDataModelBuilderAgent();
             var uiBuilderAgent = agentFactory.CreateUIBuilderAgent();
+            var handymanAgent = agentFactory.CreateHandymanAgent();
 
             app.MapAGUI("/", architectAgent.InternalAgent);
             app.MapAGUI("/architect", architectAgent.InternalAgent);
             app.MapAGUI("/datamodel", dataModelAgent.InternalAgent);
             app.MapAGUI("/ui", uiBuilderAgent.InternalAgent);
+            app.MapAGUI("/handyman", handymanAgent.InternalAgent);
 
             app.MapGet("/diagnostics", async (
     HttpContext ctx,

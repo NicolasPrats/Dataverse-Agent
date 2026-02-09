@@ -19,7 +19,7 @@ export function CustomAssistantMessage({ message, inProgress = false }: MessageP
 
     let messageContent = (message as any).content || "";
     let isEmpty = false;
-    if (messageContent || messageContent.trim().length === 0) {
+    if (messageContent == null|| messageContent.trim().length === 0) {
         const funct = message.toolCalls?.[0]?.function;
         if (funct == null) {
             messageContent = "Thinking ...";

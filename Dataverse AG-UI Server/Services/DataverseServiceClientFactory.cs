@@ -19,6 +19,11 @@ public class DataverseServiceClientFactory
     }
 
     /// <summary>
+    /// Gets the connection string for the Dataverse environment.
+    /// </summary>
+    public string ConnectionString => _configuration.ConnectionString;
+
+    /// <summary>
     /// Gets or creates a ServiceClient instance.
     /// </summary>
     public ServiceClient GetServiceClient()
