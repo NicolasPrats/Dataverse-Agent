@@ -139,8 +139,8 @@ namespace Dataverse_AG_UI_Server.Agents.Tools
                         IsDefault = e.GetAttributeValue<bool>("isdefault"),
                         IsCustomizable = e.GetAttributeValue<BooleanManagedProperty>("iscustomizable")?.Value ?? false,
                         Description = e.GetAttributeValue<string>("description"),
-                        HasFetchXml = !string.IsNullOrEmpty(e.GetAttributeValue<string>("fetchxml")),
-                        HasLayoutXml = !string.IsNullOrEmpty(e.GetAttributeValue<string>("layoutxml"))
+                        FetchXml = e.GetAttributeValue<string>("fetchxml"),
+                        LayoutXml = e.GetAttributeValue<string>("layoutxml")
                     }).ToList();
 
                     return new
@@ -345,7 +345,7 @@ namespace Dataverse_AG_UI_Server.Agents.Tools
                         FormTypeName = GetFormTypeName(e.GetAttributeValue<OptionSetValue>("type")?.Value ?? 0),
                         Description = e.GetAttributeValue<string>("description"),
                         IsCustomizable = e.GetAttributeValue<BooleanManagedProperty>("iscustomizable")?.Value ?? false,
-                        HasFormXml = !string.IsNullOrEmpty(e.GetAttributeValue<string>("formxml"))
+                        FormXml = e.GetAttributeValue<string>("formxml")
                     }).ToList();
 
                     return new

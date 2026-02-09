@@ -54,6 +54,7 @@ public abstract class AgentBase : IAgent
             instructions: Instructions,
             name: Name,
             tools: [.. ToolFunctions]
+            
         );
     }
 

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Markdown } from "@copilotkit/react-ui";
 
@@ -9,17 +9,28 @@ interface MessageProps {
 
 export function CustomAssistantMessage({ message, inProgress = false }: MessageProps) {
     if (!message) return null;
-const timestamp = new Date(message.createdAt || Date.now()).toLocaleString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-});
+    const timestamp = new Date(message.createdAt || Date.now()).toLocaleString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
 
-const messageContent = (message as any).content || "";
-const isEmpty = !messageContent || messageContent.trim().length === 0;
-    if (isEmpty && !inProgress) {
+    let messageContent = (message as any).content || "";
+    let isEmpty = false;
+    if (messageContent || messageContent.trim().length === 0) {
+        const funct = message.toolCalls?.[0]?.function;
+        if (funct == null) {
+            messageContent = "Thinking ...";
+        } else {
+            messageContent = "🔎 " + funct.name + " " + funct.arguments;
+            isEmpty = true;
+        }
+
+    }
+
+    if (isEmpty) {
         return null;
     }
 
@@ -87,11 +98,9 @@ const isEmpty = !messageContent || messageContent.trim().length === 0;
                         opacity: inProgress ? 0.7 : 1,
                     }}
                 >
-                    {isEmpty ? (
-                        <span style={{ color: "#9AA0A6", fontStyle: "italic" }}>Thinking...</span>
-                    ) : (
-                        <Markdown content={messageContent} />
-                    )}
+
+                    <Markdown content={messageContent} />
+
                 </div>
             </div>
         </div>
@@ -99,19 +108,19 @@ const isEmpty = !messageContent || messageContent.trim().length === 0;
 }
 
 export function CustomUserMessage({ message }: MessageProps) {
-if (!message) return null;
-const timestamp = new Date(message.createdAt || Date.now()).toLocaleString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-});
+    if (!message) return null;
+    const timestamp = new Date(message.createdAt || Date.now()).toLocaleString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
 
-const messageContent = (message as any).content || "";
-if (!messageContent.trim()) {
-    return null;
-}
+    const messageContent = (message as any).content || "";
+    if (!messageContent.trim()) {
+        return null;
+    }
 
     return (
         <div

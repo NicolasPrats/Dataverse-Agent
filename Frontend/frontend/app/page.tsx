@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { CopilotChat } from "@copilotkit/react-ui";
 import "@copilotkit/react-ui/styles.css";
-import { useHumanInTheLoop } from "@copilotkit/react-core";
 import DiagnosticLogs from "./components/DiagnosticLogs";
 import ResizablePanel from "./components/ResizablePanel";
 import { CustomAssistantMessage, CustomUserMessage } from "./components/CustomMessage";
