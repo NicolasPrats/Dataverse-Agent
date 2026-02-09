@@ -22,7 +22,7 @@ export const agentConfigs: Record<string, AgentConfig> = {
     },
     "Handyman": {
         displayName: "Handyman Robot",
-        avatar: "/PP/architect.png",
+        avatar: "/PP/handyman.png",
         color: "#4F8AD4"
     },
     "default": {
