@@ -12,41 +12,41 @@ public class AgentFactory(IDiagnosticBus diagBus, AppConfiguration config, IChat
     private readonly IChatClientFactory _chatClientFactory = chatClientFactory ?? throw new ArgumentNullException(nameof(chatClientFactory));
     private readonly DataverseServiceClientFactory _serviceClientFactory = serviceClientFactory ?? throw new ArgumentNullException(nameof(serviceClientFactory));
 
-    public DataModelBuilderAgent CreateDataModelBuilderAgent()
+    public async Task<DataModelBuilderAgent> CreateDataModelBuilderAgentAsync()
     {
         var dataModelTools = new DataverseDataModelTools(_serviceClientFactory);
         var agent = new DataModelBuilderAgent(diagBus, dataModelTools);
-        agent.Initialize(_chatClientFactory.CreateChatClient());
+        await agent.InitializeAsync(_chatClientFactory.CreateChatClient());
         return agent;
     }
 
-    public UIBuilderAgent CreateUIBuilderAgent()
+    public async Task<UIBuilderAgent> CreateUIBuilderAgentAsync()
     {
         var uiTools = new DataverseUITools(_serviceClientFactory);
         var agent = new UIBuilderAgent(diagBus, uiTools);
-        agent.Initialize(_chatClientFactory.CreateChatClient());
+        await agent.InitializeAsync(_chatClientFactory.CreateChatClient());
         return agent;
     }
 
-    public HandymanAgent CreateHandymanAgent()
+    public async Task<HandymanAgent> CreateHandymanAgentAsync ()
     {
         var scriptTools = new ScriptTools(_serviceClientFactory);
         var agent = new HandymanAgent(diagBus, scriptTools);
-        agent.Initialize(_chatClientFactory.CreateChatClient());
+        await agent.InitializeAsync(_chatClientFactory.CreateChatClient());
         return agent;
     }
 
-    public ArchitectAgent CreateArchitectAgent()
+    public async Task<ArchitectAgent> CreateArchitectAgentAsync()
     {
         // Create the tools for direct access
         var dataModelTools = new DataverseDataModelTools(_serviceClientFactory);
         var uiTools = new DataverseUITools(_serviceClientFactory);
         
         // Create the specialized agents that the ArchitectAgent can delegate to
-        var dataModelBuilderAgent = CreateDataModelBuilderAgent();
-        var uiBuilderAgent = CreateUIBuilderAgent();
-        var handymanAgent = CreateHandymanAgent();
-        
+        var dataModelBuilderAgent = await CreateDataModelBuilderAgentAsync();
+        var uiBuilderAgent = await CreateUIBuilderAgentAsync();
+        var handymanAgent = await CreateHandymanAgentAsync();
+
         var agent = new ArchitectAgent(
             diagBus,
             dataModelBuilderAgent, 
@@ -54,7 +54,7 @@ public class AgentFactory(IDiagnosticBus diagBus, AppConfiguration config, IChat
             handymanAgent,
             dataModelTools,
             uiTools);
-        agent.Initialize(_chatClientFactory.CreateChatClient());
+        await agent.InitializeAsync(_chatClientFactory.CreateChatClient());
         return agent;
     }
 

@@ -14,7 +14,7 @@ namespace Dataverse_AG_UI_Server
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddHttpClient().AddLogging();
@@ -42,18 +42,17 @@ namespace Dataverse_AG_UI_Server
 
             var chatClientFactory = new AzureOpenAIChatClientFactory(appConfig);
             var agentFactory = new AgentFactory(diagBus, appConfig, chatClientFactory, serviceClientFactory);
-            var orchestrator = new AgentOrchestrator();
 
-            var architectAgent = agentFactory.CreateArchitectAgent();
-            var dataModelAgent = agentFactory.CreateDataModelBuilderAgent();
-            var uiBuilderAgent = agentFactory.CreateUIBuilderAgent();
-            var handymanAgent = agentFactory.CreateHandymanAgent();
+            var architectAgent = await agentFactory.CreateArchitectAgentAsync();
+            var dataModelAgent = await agentFactory.CreateDataModelBuilderAgentAsync();
+            var uiBuilderAgent = await agentFactory.CreateUIBuilderAgentAsync();
+            var handymanAgent = await agentFactory.CreateHandymanAgentAsync();
 
-            app.MapAGUI("/", architectAgent.InternalAgent);
-            app.MapAGUI("/architect", architectAgent.InternalAgent);
-            app.MapAGUI("/datamodel", dataModelAgent.InternalAgent);
-            app.MapAGUI("/ui", uiBuilderAgent.InternalAgent);
-            app.MapAGUI("/handyman", handymanAgent.InternalAgent);
+            app.MapAGUI("/", architectAgent.InternalAgent!);
+            //app.MapAGUI("/architect", architectAgent.InternalAgent);
+            //app.MapAGUI("/datamodel", dataModelAgent.InternalAgent);
+            //app.MapAGUI("/ui", uiBuilderAgent.InternalAgent);
+            //app.MapAGUI("/handyman", handymanAgent.InternalAgent);
 
             app.MapGet("/diagnostics", async (
     HttpContext ctx,

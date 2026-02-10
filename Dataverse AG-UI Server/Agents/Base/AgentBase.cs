@@ -3,6 +3,7 @@ using Dataverse_AG_UI_Server.Diagnostics;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using System.ComponentModel;
+using System.Threading;
 
 namespace Dataverse_AG_UI_Server.Agents.Base;
 
@@ -11,16 +12,17 @@ public abstract class AgentBase : IAgent
     public IDiagnosticBus DiagBus { get; }
     public string Name { get; protected set; }
     public string Instructions { get; protected set; }
-    public AIAgent InternalAgent { get; protected set; }
+    public AIAgent? InternalAgent { get; protected set; }
 
     private List<AIFunction> ToolFunctions { get; } = [];
+
+    private AgentSession? InternalSession { get; set; }
 
     protected AgentBase(IDiagnosticBus diagBus, string name, string instructions)
     {
         DiagBus = diagBus;
         Name = name;
         Instructions = instructions;
-        InternalAgent = null!; // Will be initialized in BuildAgent
     }
 
     protected void AddTools(params Tool[] tools)
@@ -48,36 +50,26 @@ public abstract class AgentBase : IAgent
     }
 
 
-    public void Initialize(IChatClient chatClient)
+    public async Task InitializeAsync(IChatClient chatClient)
     {
         InternalAgent = chatClient.AsAIAgent(
             instructions: Instructions,
             name: Name,
             tools: [.. ToolFunctions]
-            
+
         );
-    }
-
-    public virtual async Task<string> RunAsync(string input)
-    {
-        return await RunAsync(input, CancellationToken.None);
-    }
-
-    public virtual async Task<string> RunAsync(string input, CancellationToken cancellationToken)
-    {
-        if (InternalAgent == null)
-            throw new InvalidOperationException($"Agent '{Name}' has not been initialized. Call Initialize() first.");
-
-        var result = await InternalAgent.RunAsync(input, cancellationToken: cancellationToken);
-        return result?.ToString() ?? string.Empty;
+        InternalSession = await InternalAgent.GetNewSessionAsync();
     }
 
     private async Task<string> TransferRequestAsync(
     [Description("The request to send to the agent")] string request)
     {
+
+        if (InternalAgent == null)
+            throw new InvalidOperationException($"Agent '{Name}' has not been initialized. Call Initialize() first.");
         try
         {
-            var result = await this.RunAsync(request);
+            var result = await InternalAgent.RunAsync(request, InternalSession);
             return $"Agent response:\n{result}";
         }
         catch (Exception ex)

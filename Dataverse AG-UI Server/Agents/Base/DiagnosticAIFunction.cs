@@ -7,7 +7,6 @@ namespace Dataverse_AG_UI_Server.Agents.Base;
 
 public class DiagnosticAIFunction(AIFunction innerFunction, string agentName, string target, IDiagnosticBus diagBus, TargetType targetType) : AIFunction
 {
-    private readonly AIFunction _innerFunction = innerFunction;
     private readonly string _agentName = agentName;
     private readonly string _target = target;
     private readonly IDiagnosticBus _diagBus = diagBus;
@@ -17,7 +16,7 @@ public class DiagnosticAIFunction(AIFunction innerFunction, string agentName, st
     {
         get
         {
-            return InnerFunction.AdditionalProperties;
+            return innerFunction.AdditionalProperties;
         }
     }
 
@@ -26,8 +25,6 @@ public class DiagnosticAIFunction(AIFunction innerFunction, string agentName, st
     public override JsonElement JsonSchema => innerFunction.JsonSchema;
     public override JsonElement? ReturnJsonSchema => innerFunction.ReturnJsonSchema;
     public override JsonSerializerOptions JsonSerializerOptions => innerFunction.JsonSerializerOptions;
-
-    public AIFunction InnerFunction => _innerFunction;
 
     protected override async ValueTask<object?> InvokeCoreAsync(
         AIFunctionArguments? arguments,
@@ -48,7 +45,7 @@ public class DiagnosticAIFunction(AIFunction innerFunction, string agentName, st
         
         try
         {
-            var result = await InnerFunction.InvokeAsync(arguments, cancellationToken);
+            var result = await innerFunction.InvokeAsync(arguments, cancellationToken);
             
             var duration = DateTime.UtcNow - startTime;
             var completeEvent = new AgentDiagnosticEvent
@@ -89,7 +86,8 @@ public class DiagnosticAIFunction(AIFunction innerFunction, string agentName, st
                 Target = _target,
                 TargetType = _targetType,
                 Payload = new { Status = "Called failed.", Arguments = arguments },
-                Result = ex,                
+                Result = ex,
+                Duration = duration
             };
             _diagBus.Publish(errorEvent);
             throw;
